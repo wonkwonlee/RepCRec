@@ -18,6 +18,10 @@ def run_file(input_file, output_file):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print('INCORRECT INPUT')
+        sys.exit(1)
+
     parser = argparse.ArgumentParser("RepCRec")
     parser.add_argument("mode", type=str, help="program mode (f/d/i), 'i' represents interactive mode")
     parser.add_argument("-input", type=str, help="input source")
