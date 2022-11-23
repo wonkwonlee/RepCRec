@@ -13,14 +13,24 @@ if __name__ == '__main__':
     if fileName.mode == 'r':
         inputSource = fileName.readlines()
 
-    print("FILE NAME IS :: {}".format(fileName))
-    print()
-    print("INPUT SOURCE IS :: {}".format(inputSource))
-    print()
+    # print("FILE NAME IS :: {}".format(fileName))
+    # print()
+    # print("INPUT SOURCE IS :: {}".format(inputSource))
+    # print()
 
     if fileName :
-        print("INPUT :: {}".format(fileName))
+        #print("INPUT :: {}".format(inputSource))
         try:
-            print("OPEN SUCCESSFULLY :: {}".format(fileName))
+            #print("OPEN SUCCESSFULLY :: {}".format(inputSource))
+
+            for line in inputSource:
+                if line == "":
+                    continue
+                
+                newLine = ''.join(filter(lambda c: c != ' ' and c != '\t' and c != '\n' and c is not None, line))
+                newLine = line.split('//')[0].strip()
+                print(newLine)
+
+
         except IOError:
-            print("CAN'T OPEN FILE {}".format(fileName))
+            print("CAN'T OPEN FILE {}".format(inputSource))
