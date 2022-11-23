@@ -1,35 +1,26 @@
-from utils.FileLoader import FileLoader
-from utils.driver import run, run_interactive
-import argparse
+import TransactionManager
 import sys
 import os
 
+if __name__ == '__main__':
 
-def run_file(input_file, output_file):
-    
-    with open(output_file, "w") as f:
-        sys.stdout = f
-        loader = FileLoader(input_file)
-        case_id = 1
-        while loader.has_next():
-            print(f"Test {case_id} Result")
-            c = loader.next_case()
-            run(c)
-            case_id += 1
-
-
-if __name__ == "__main__":
     if len(sys.argv) != 2:
         print('INCORRECT INPUT')
         sys.exit(1)
 
-    parser = argparse.ArgumentParser("RepCRec")
-    parser.add_argument("mode", type=str, help="program mode (f/d/i), 'i' represents interactive mode")
-    parser.add_argument("-input", type=str, help="input source")
-    parser.add_argument("-output", type=str, help="output source")
-    args = parser.parse_args()
+    inputSource = sys.stdin
+    fileName = open(sys.argv[1], 'r')
+    if fileName.mode == 'r':
+        inputSource = fileName.readlines()
 
-    mode, input_src, output_src = args.mode, args.input, args.output
+    print("FILE NAME IS :: {}".format(fileName))
+    print()
+    print("INPUT SOURCE IS :: {}".format(inputSource))
+    print()
 
-    if args.mode == "f":
-        run_file(input_src, output_src)
+    if fileName :
+        print("INPUT :: {}".format(fileName))
+        try:
+            print("OPEN SUCCESSFULLY :: {}".format(fileName))
+        except IOError:
+            print("CAN'T OPEN FILE {}".format(fileName))
