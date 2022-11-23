@@ -2,6 +2,7 @@ from utils.FileLoader import FileLoader
 from utils.driver import run, run_interactive
 import argparse
 import sys
+import os
 
 
 def run_file(input_file, output_file):
