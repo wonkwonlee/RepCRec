@@ -2,6 +2,7 @@ import TransactionManager
 import sys
 import os
 
+
 if __name__ == '__main__':
 
     if len(sys.argv) != 2:
@@ -27,10 +28,44 @@ if __name__ == '__main__':
                 if line == "":
                     continue
                 
-                newLine = ''.join(filter(lambda c: c != ' ' and c != '\t' and c != '\n' and c is not None, line))
                 newLine = line.split('//')[0].strip()
+                if len(newLine) == 0 :
+                    continue
+                elif newLine.startswith('quit') :
+                    break
+
                 print(newLine)
+                
+                temp = newLine.strip().strip(')')
+                temp = temp.split('(')
+                method = temp[0]
+                # args = temp[1].split(',')
+                # print("method :: {}".format(method))
+                # print()
+
+                if method.startswith('begin'):
+                    print("begin")
+                elif method.startswith('beginRO'):
+                    print("beginRO")
+                elif method.startswith('W'):
+                    print("W")
+                elif method.startswith('R'):
+                    print("R")
+                elif method.startswith('fail'):
+                    print("fail")
+                elif method.startswith('recover'):
+                    print("recover")
+                elif method.startswith('end'):
+                    print("end")
+                elif method.startswith('dump'):
+                    print("dump")
+                else :
+                    print("Unrecognized Command. Abort The Program")
+                    break
+
+                
 
 
         except IOError:
             print("CAN'T OPEN FILE {}".format(inputSource))
+
