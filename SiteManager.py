@@ -1,3 +1,15 @@
+class Variable(object):
+    """_summary_
+
+    Args:
+        object (_type_): _description_
+    """
+    
+    def __init__(self, id: int):
+        self.id = id
+        self.val = id * 10
+    
+
 class SiteManager:
     def __init__(self, site_id: int):
         self.site_id = site_id
@@ -6,9 +18,7 @@ class SiteManager:
         self.lock_table = {}
         self.transaction_table = {}
         
+        # Initialize data
         for i in range(1, 21):
-            v_id = "x" + str(i)
-            if i % 2 == 0:
-                # self.data[i] = self.
+            if i % 2 == 0 or i % 10 + 1 == self.site_id:
         
-    
