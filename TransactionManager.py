@@ -19,12 +19,14 @@ class TransactionManager:
         """
         Read operation
         """
+        self.ts += 1
         self.operation_list.append(Operation('R', t_id, v_id, None))
     
     def write_operation(self, t_id, v_id, val):
         """
         Write operation
         """
+        self.ts += 1
         self.operation_list.append(Operation('W', t_id, v_id, val))
         
     
@@ -161,6 +163,7 @@ class TransactionManager:
         """
         Recover a site.
         """
+        self.ts += 1
         self.dm_list[int(site_id) - 1].recover(self.ts)
         print("Site {} recovers".format(site_id),'\n')
             
@@ -168,6 +171,7 @@ class TransactionManager:
         """
         Fail a site.
         """
+        self.ts += 1
         self.dm_list[int(site_id) - 1].fail(self.ts)    
         print("Site {} fails".format(site_id),'\n')
         
