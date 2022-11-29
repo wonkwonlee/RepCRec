@@ -1,7 +1,11 @@
-import TransactionManager
 import sys
 import os
 
+import TransactionManager
+import SiteManager
+import DataManager
+
+ts = 0
 
 if __name__ == '__main__':
 
@@ -18,7 +22,9 @@ if __name__ == '__main__':
     # print()
     # print("INPUT SOURCE IS :: {}".format(inputSource))
     # print()
+
     tm = TransactionManager.TransactionManager()
+    sm = SiteManager.SiteManager()
 
     if fileName :
         #print("INPUT :: {}".format(inputSource))
@@ -34,54 +40,67 @@ if __name__ == '__main__':
                     continue
                 elif newLine.startswith('quit') :
                     break
-
-                # print("newLine :: " + newLine)
                 
                 temp = newLine.strip().strip(')')
                 temp = temp.split('(')
                 method = temp[0]
+                
+                # print("newLine :: " + newLine)
+                # print("temp :: {}".format(temp))
+                # print("method :: "+method)
                 
                 # args = {}
                 # if(len(args) > 0) :
                     # args = temp[1].split(',')
                 # print("args :: {}".format(args))
 
+                ts += 1
+
                 if method.startswith('begin'):
-                    parameter1 = temp[1]
-                    print(method, parameter1)
-                    tm.begin(parameter1)
+                    p1 = temp[1]
+                    print(method, p1)
+                    tm.begin(p1)
 
                 elif method.startswith('beginRO'):
-                    parameter1 = temp[1]
-                    print(method, parameter1)
+                    p1 = temp[1]
+                    print(method, p1)
+                    tm.beginRO(p1)
 
                 elif method.startswith('W'):
                     args = temp[1].split(',')
-                    parameter1 = args[0]
-                    parameter2 = args[1]
-                    parameter3 = args[2]
-                    print(method, parameter1, parameter2, parameter3)
+                    p1 = args[0]
+                    p2 = args[1]
+                    p3 = args[2]
+                    print(method, p1, p2, p3)
+                    tm.write(p1, p2, p3)
+
 
                 elif method.startswith('R'):
                     args = temp[1].split(',')
-                    parameter1 = args[0]
-                    parameter2 = args[1]
-                    print(method, parameter1, parameter2)
+                    p1 = args[0]
+                    p2 = args[1]
+                    print(method, p1, p2)
+                    tm.read(p1, p2)
 
                 elif method.startswith('fail'):
-                    parameter1 = temp[1][0]
-                    print(method, parameter1)
+                    p1 = temp[1]
+                    print(method, p1)
+                    tm.fail(p1)
 
                 elif method.startswith('recover'):
-                    parameter1 = temp[1][0]
-                    print(method, parameter1)
+                    p1 = temp[1]
+                    print(method, p1)
+                    tm.recover(p1)
 
                 elif method.startswith('end'):
-                    parameter1 = temp[1][0]
-                    print(method, parameter1)
+                    p1 = temp[1]
+                    print(method, p1)
+                    tm.end(p1)
 
                 elif method.startswith('dump'):
                     print(method)
+                    tm.dump()
+                    
                 else :
                     print("Unrecognized Command. Abort The Program")
                     break
