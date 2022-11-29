@@ -1,8 +1,10 @@
 class Variable(object):
-    def __init__(self, id: int):
-        self.id = id
-        self.val = id * 10
+    def __init__(self, v_id: int):
+        self.v_id = v_id
+        self.val = v_id * 10
+        self.commits = {}
         self.readable = True
+        self.fail = False
 
 
 class DataManager:
@@ -45,3 +47,16 @@ class DataManager:
             if k % 2 != 0:
                 self.readable.add(k)
                 
+    def read_snapshot(self, v_id: int, ts: int):
+        var = self.data[v_id]
+        
+        if var.readable:
+            for site in self.fail_ts:
+                if site < ts:
+                    return var.val
+           
+           
+            
+        else:
+            var.fail = True
+            var.val = None
