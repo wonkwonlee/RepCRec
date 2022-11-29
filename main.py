@@ -72,7 +72,7 @@ if __name__ == '__main__':
                     p2 = args[1]
                     p3 = args[2]
                     print(method, p1, p2, p3)
-                    tm.write(p1, p2, p3)
+                    tm.write_operation(p1, p2, p3)
 
 
                 elif method.startswith('R'):
@@ -80,7 +80,7 @@ if __name__ == '__main__':
                     p1 = args[0]
                     p2 = args[1]
                     print(method, p1, p2)
-                    tm.read(p1, p2)
+                    tm.read_operation(p1, p2)
 
                 elif method.startswith('fail'):
                     p1 = temp[1]
