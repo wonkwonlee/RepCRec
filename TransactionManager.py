@@ -10,10 +10,10 @@ class TransactionManager:
     
     
     def __init__(self):
-        self.site_list = []
+        self.sites = []
         
         for site in range(1, 11):
-            self.site_list.append(DataManager(site))
+            self.sites.append(DataManager(site))
         
     
     '''
@@ -25,6 +25,7 @@ class TransactionManager:
         """
         self.transaction_table[t_id] = ReadWriteTransaction(t_id, self.ts, is_ro=False)
         self.ts += 1
+        # print(self.transaction_table)
         print("Transaction {} begins with time stamp {}".format(t_id, self.ts),'\n')
     
     def beginRO(self, t_id):
@@ -39,6 +40,17 @@ class TransactionManager:
         """
         Read a variable from the snapshot of a read-only transaction.
         """
+        ts = self.transaction_table[t_id].ts
+        
+        for site in self.sites:
+            if site.is_running and v_id in site.data:
+                site.read_snapshot(t_id, v_id, ts)
+                
+                
+                print("Transaction {} reads variable {} = {}".format(t_id, v_id, site.data[v_id][ts]))
+                return site.data[v_id][ts]
+        
+        
         if v_id not in self.transaction_table[t_id].snapshot:
             print("Transaction {} aborts".format(t_id),'\n')
             self.transaction_table[t_id].is_aborted = True
@@ -63,15 +75,20 @@ class TransactionManager:
         """
         Write a variable from a read-write transaction.
         """
-        if self.transaction_table[t_id].is_aborted:
-            print("Transaction id {} not in table".format(t_id))
+        
+        if t_id not in self.transaction_table:
             print("Transaction {} aborts".format(t_id),'\n')
+            self.transaction_table[t_id].is_aborted = True
+        
+        # if self.transaction_table[t_id].is_aborted:
+        #     print("Transaction id {} not in table".format(t_id))
+        #     print("Transaction {} aborts".format(t_id),'\n')
         else:
-            if v_id not in self.transaction_table[t_id].write_values:
-                print("Transaction id {} not in table".format(t_id))
-                print("Transaction {} aborts".format(t_id),'\n')
-                self.transaction_table[t_id].is_aborted = True
-            else:
+            # if v_id not in self.transaction_table[t_id].write_values:
+            #     print("Transaction id {} not in table".format(t_id))
+            #     print("Transaction {} aborts".format(t_id),'\n')
+            #     self.transaction_table[t_id].is_aborted = True
+            # else:
                 print("Transaction {} writes variable {} = {}".format(t_id, v_id, val),'\n')
                 self.transaction_table[t_id].write_values[v_id] = val
                 self.transaction_table[t_id].write_ts[v_id] = self.ts
@@ -81,7 +98,7 @@ class TransactionManager:
         """
         Dump the state of all sites.
         """
-        for site in self.site_list:
+        for site in self.sites:
             site.dump()
                 
     def end(self, t_id):
@@ -97,7 +114,7 @@ class TransactionManager:
         """
         Abort a transaction.
         """
-        for site in self.site_list:
+        for site in self.sites:
             site.abort(t_id)
         del self.transaction_table[t_id]
         print("Transaction {} aborts".format(t_id),'\n')
@@ -106,7 +123,7 @@ class TransactionManager:
         """
         Commit a transaction.
         """
-        for site in self.site_list:
+        for site in self.sites:
             site.commit(t_id, c_ts)
         del self.transaction_table[t_id]
         print("Transaction {} commits".format(t_id),'\n')
@@ -115,15 +132,15 @@ class TransactionManager:
         """
         Recover a site.
         """
-        self.site_list[site_id - 1].recover(site_id, self.ts)
-        print("Site {} recovers".format(site_id),'\n')
+        self.sites[site_id - 1].recover(site_id, self.ts)
+        print("Site {} recovers".format(site_id))
             
     def fail(self, site_id):
         """
         Fail a site.
         """
-        self.site_list[site_id - 1].fail(site_id, self.ts)
-        print("Site {} fails".format(site_id),'\n')
+        self.sites[site_id - 1].fail(site_id, self.ts)
+        print("Site {} fails".format(site_id))
         
     def getTimeStamp(self) :
         """
