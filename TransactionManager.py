@@ -1,5 +1,5 @@
 from Transaction import Transaction, ReadOnlyTransaction, ReadWriteTransaction, Operation
-from SiteManager import SiteManager
+from DataManager import DataManager
 
 class TransactionManager:
     transaction_table = {}
@@ -10,7 +10,7 @@ class TransactionManager:
         self.site_list = []
         
         for site in range(1, 11):
-            self.site_list.append(SiteManager(site))
+            self.site_list.append(DataManager(site))
         
     
     
