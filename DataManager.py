@@ -14,10 +14,6 @@ class DataManager:
         self.fail_ts = []
         self.recover_ts = []
         self.readable = set()
-        
-        # # Initialize sites
-        # for i in range(10):
-            
 
         # Initialize data variables
         for i in range(1, 21):
@@ -32,7 +28,6 @@ class DataManager:
 
         for k, v in self.data.items():
             output += f" x{k}: {v.val}"
-        
         print(output)
         
     def fail(self, ts):
@@ -48,5 +43,5 @@ class DataManager:
 
         for k, v in self.data.items():
             if k % 2 != 0:
-                self.readable.add()
+                self.readable.add(k)
                 
