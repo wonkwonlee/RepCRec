@@ -14,6 +14,14 @@ class TransactionManager:
         
         for site in range(1, 11):
             self.sites.append(DataManager(site))
+    
+    def read_opeartion(self, t_id, v_id):
+        """
+        Read operation
+        """
+        self.operation_list.append(Operation(op="read", t_id, v_id, None))
+        
+    
         
     
     '''
@@ -146,5 +154,5 @@ class TransactionManager:
         """
         Get Time Stamp
         """
-        print("Time Stamp :: {}".format(ts),'\n')
+        print("Time Stamp :: {}".format(self.ts),'\n')
         return self.ts
