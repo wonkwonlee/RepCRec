@@ -14,7 +14,29 @@ class TransactionManager:
         
         for site in range(1, 11):
             self.site_list.append(DataManager(site))
+    
+    def read_operation(self, t_id, v_id):
+        """
+        Read operation
+        """
+        self.operation_list.append(Operation('R', t_id, v_id, None))
+    
+    def write_operation(self, t_id, v_id, val):
+        """
+        Write operation
+        """
+        self.operation_list.append(Operation('W', t_id, v_id, val))
         
+    
+    def run_operation(self, operation):
+        """
+        Run an operation.
+        """
+        if operation.operation_type == 'R':
+            self.read(operation.t_id, operation.v_id)
+        elif operation.operation_type == 'W':
+            self.write(operation.t_id, operation.v_id, operation.val)
+    
     
     '''
     Functions for instruction execution
