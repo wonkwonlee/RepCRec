@@ -34,20 +34,21 @@ class TransactionManager:
         """
         for operation in self.operation_list:
             if not operation.t_id in self.transaction_table:
-                print("Transaction id {} not in table".format(operation.t_id))
+                # print("Transaction id {} not in table".format(operation.t_id))
                 self.operation_list.remove(operation)
             else:
                 if operation.op == 'R':
                     if self.transaction_table[operation.t_id].is_ro:
-                        self.read_snapshot(operation.t_id, operation.v_id)
+                        result = self.read_snapshot(operation.t_id, operation.v_id)
                     else:
-                        self.read(operation.t_id, operation.v_id)
+                        result = self.read(operation.t_id, operation.v_id)
                 elif operation.op == 'W':
-                    self.write(operation.t_id, operation.v_id, operation.val)              
+                    result = self.write(operation.t_id, operation.v_id, operation.val)              
                 else:
                     print("Invalid operation")
-                    
-                self.operation_list.remove(operation)
+                
+                if result:   
+                    self.operation_list.remove(operation)
     
     '''
     Functions for instruction execution
@@ -72,25 +73,34 @@ class TransactionManager:
         """
         Read a variable from the snapshot of a read-only transaction.
         """
-        if v_id not in self.transaction_table[t_id].snapshot:
+        if not t_id in self.transaction_table:
             print("Transaction {} aborts".format(t_id),'\n')
-            self.transaction_table[t_id].is_aborted = True
-        else:
-            print("Transaction {} reads variable {} = {}".format(t_id, v_id, self.transaction_table[t_id].snapshot[v_id]),'\n')
+            return False
+        for dm in self.dm_list:
+            if dm.is_running and v_id in dm.data_table:
+                result = dm.read_snapshot(t_id, v_id)
+                if result:
+                    self.transaction_table[t_id].visited_sites.append(dm.site_id)
+                    print("Transaction {} reads variable {} of {} from site {}".format(t_id, v_id, dm.data_table[v_id].val, dm.site_id),'\n')
+                    return True
+        return False
             
+          
     def read(self, t_id, v_id):
         """
         Read a variable from a read-write transaction.
         """
         if not t_id in self.transaction_table:
             print("Transaction {} aborts".format(t_id),'\n')
-        else:
-            for dm in self.dm_list:
-                # print(dm.data_table)
-                if dm.is_running and v_id in dm.data_table:
-                    dm.read(t_id, v_id)
-                    print("Transaction {} reads variable {} = {}".format(t_id, v_id, dm.data_table[v_id]),'\n')
-                    break
+            return False
+        for dm in self.dm_list:
+            if dm.is_running and v_id in dm.data_table:
+                result = dm.read_snapshot(t_id, v_id)
+                if result:
+                    self.transaction_table[t_id].visited_sites.append(dm.site_id)
+                    print("Transaction {} reads variable {} of {} from site {}".format(t_id, v_id, dm.data_table[v_id].val, dm.site_id),'\n')
+                    return True
+        return False
         
         
     
@@ -101,22 +111,17 @@ class TransactionManager:
         """
         if not t_id in self.transaction_table:
             print("Transaction {} aborts".format(t_id),'\n')
-            
+            return False
         for dm in self.dm_list:
             if dm.is_running and v_id in dm.data_table:
-                dm.write(t_id, v_id, val)
-                print("Transaction {} writes variable {} = {}".format(t_id, v_id, val),'\n')
-                
+                result = dm.write(t_id, v_id, val)
+                if result:
+                    self.transaction_table[t_id].visited_sites.append(dm.site_id)
+                    print("Transaction {} writes variable {} of {} from site {}".format(t_id, v_id, dm.data_table[v_id].val, dm.site_id),'\n')
+                    return True
+        return False
         
-
-        # if self.transaction_table[t_id].is_aborted:
-        #     print("Transaction id {} not in table".format(t_id))
-        #     print("Transaction {} aborts".format(t_id),'\n')
-        # else:
-        #     print("Transaction {} writes variable {} = {}".format(t_id, v_id, val),'\n')
-        #     self.transaction_table[t_id].write_values[v_id] = val
-        #     self.transaction_table[t_id].write_ts[v_id] = self.ts
-        #     self.ts += 1
+        
     
     def dump(self):
         """

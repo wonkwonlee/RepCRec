@@ -48,13 +48,13 @@ class DataManager:
         self.is_running = True
         self.recover_ts.append(ts)
 
-        for k, v in self.data_table.items():
-            if v % 2 != 0:
+        for _, v in self.data_table.items():
+            if v.replicated:
                 self.readable = False
                 
     def read_snapshot(self, v_id: int, ts: int):
-        var = self.data_table[v_id]
-        pass
+        # var = self.data_table[v_id]
+        return True
         # if not var.readable:
         #     return
         # else:
@@ -64,9 +64,11 @@ class DataManager:
            
         
     def read(self, t_id: int, v_id: int):
+        return True
         pass
     
     def write(self, t_id: int, v_id: int, val: int):
+        return True
         pass
    
            
