@@ -1,4 +1,4 @@
-class Transaction(object):
+class Transaction:
     def __init__(self, id: str, ts: int, is_ro: bool):
         """
         Initialize a transaction object.
