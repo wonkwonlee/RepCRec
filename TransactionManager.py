@@ -28,7 +28,6 @@ class TransactionManager:
         """
         self.ts += 1
         self.operation_list.append(Operation('W', t_id, v_id, val))
-        
     
     def run_operation(self):
         """
@@ -140,7 +139,7 @@ class TransactionManager:
         if self.transaction_table[t_id].is_aborted:
             self.abort(t_id)
         else:
-            self.commit(t_id)
+            self.commit(t_id, self.ts)
             
     def abort(self, t_id):
         """
@@ -151,12 +150,12 @@ class TransactionManager:
         del self.transaction_table[t_id]
         print("Transaction {} aborts".format(t_id),'\n')
 
-    def commit(self, t_id):
+    def commit(self, t_id, ts):
         """
         Commit a transaction.
         """
         for dm in self.dm_list:
-            dm.commit(t_id)
+            dm.commit(t_id, ts)
         del self.transaction_table[t_id]
         print("Transaction {} commits".format(t_id),'\n')
         
