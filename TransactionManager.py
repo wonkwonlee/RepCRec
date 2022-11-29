@@ -13,7 +13,6 @@ class TransactionManager:
             self.site_list.append(DataManager(site))
         
     
-    
     '''
     Functions for instruction execution
     '''  
