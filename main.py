@@ -25,6 +25,8 @@ if __name__ == '__main__':
 
     tm = TransactionManager.TransactionManager()
     sm = SiteManager.SiteManager()
+    
+    deadlock_detected = False
 
     if fileName :
         #print("INPUT :: {}".format(inputSource))
@@ -105,7 +107,8 @@ if __name__ == '__main__':
                     print("Unrecognized Command. Abort The Program")
                     break
 
-                
+                if not deadlock_detected:
+                    tm.run_operation()
 
 
         except IOError:

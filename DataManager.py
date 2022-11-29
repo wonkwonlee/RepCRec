@@ -32,20 +32,20 @@ class DataManager:
             output += f" x{k}: {v.val}"
         print(output)
         
-    def fail(self, ts):
+    def fail(self, ts: int):
         self.is_running = False
         self.fail_ts.append(ts)
 
         for k, v in self.lock_table.items():
             self.lock_table[k] = None
     
-    def recover(self, ts):
+    def recover(self, ts: int):
         self.is_running = True
         self.recover_ts.append(ts)
 
         for k, v in self.data_table.items():
             if k % 2 != 0:
-                self.readable.add(k)
+                self.readable = False
                 
     def read_snapshot(self, v_id: int, ts: int):
         var = self.data_table[v_id]
@@ -57,7 +57,7 @@ class DataManager:
                 if site < ts:
                     return var.val
            
-    def commit(self, t_id: int, ts: int):
+    def commit(self, t_id: int):
         pass
     
     def abort(self, t_id: int):
