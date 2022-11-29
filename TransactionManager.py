@@ -82,17 +82,18 @@ class TransactionManager:
         """
         Read a variable from a read-write transaction.
         """
-        print(self.transaction_table)
-        if self.transaction_table[t_id].is_aborted:
+        if not t_id in self.transaction_table:
             print("Transaction {} aborts".format(t_id),'\n')
         else:
-            print(v_id)
-            if v_id not in self.transaction_table[t_id]:
-                print("Transaction {} aborts".format(t_id),'\n')
-                self.transaction_table[t_id].is_aborted = True
-            else:
-                print("Transaction {} reads variable {} = {}".format(t_id, v_id, self.transaction_table[t_id]),'\n')
-                
+            for dm in self.dm_list:
+                # print(dm.data_table)
+                if dm.is_running and v_id in dm.data_table:
+                    dm.read(t_id, v_id)
+                    print("Transaction {} reads variable {} = {}".format(t_id, v_id, dm.data_table[v_id]),'\n')
+                    break
+        
+        
+    
     # TODO: Implement LOCK function
     def write(self, t_id, v_id, val):
         """
@@ -103,7 +104,6 @@ class TransactionManager:
             
         for dm in self.dm_list:
             if dm.is_running and v_id in dm.data_table:
-                print("a")
                 dm.write(t_id, v_id, val)
                 print("Transaction {} writes variable {} = {}".format(t_id, v_id, val),'\n')
                 

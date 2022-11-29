@@ -1,9 +1,10 @@
 class Variable(object):
-    def __init__(self, v_id: int):
+    def __init__(self, v_id: int, replicated: bool):
         self.v_id = v_id
         self.val = v_id * 10
         self.commits = {}  # transaction ID: commit timestamp
         self.readable = True
+        self.replicated = replicated
         self.fail = False
 
 
@@ -19,9 +20,13 @@ class DataManager:
 
         # Initialize data variables
         for i in range(1, 21):
-            if i % 2 == 0 or i % 10 + 1 == self.site_id:
-                self.data_table[i] = Variable(i)
-                self.lock_table[i] = None
+            v_id = "x" + str(i)
+            if i % 2 == 0:
+                self.data_table[v_id] = Variable(v_id, True)
+                self.lock_table[v_id] = None
+            elif i % 10 + 1 == self.site_id:
+                self.data_table[v_id] = Variable(v_id, False)
+                self.lock_table[v_id] = None
                 
                 
     def dump(self):
@@ -44,18 +49,26 @@ class DataManager:
         self.recover_ts.append(ts)
 
         for k, v in self.data_table.items():
-            if k % 2 != 0:
+            if v % 2 != 0:
                 self.readable = False
                 
     def read_snapshot(self, v_id: int, ts: int):
         var = self.data_table[v_id]
+        pass
+        # if not var.readable:
+        #     return
+        # else:
+        #     for site in self.fail_ts:
+        #         if site < ts:
+        #             return var.val
+           
         
-        if not var.readable:
-            return
-        else:
-            for site in self.fail_ts:
-                if site < ts:
-                    return var.val
+    def read(self, t_id: int, v_id: int):
+        pass
+    
+    def write(self, t_id: int, v_id: int, val: int):
+        pass
+   
            
     def commit(self, t_id: int):
         pass
