@@ -83,7 +83,7 @@ class TransactionManager:
                 result = dm.read_snapshot(t_id, v_id)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
-                    print("Transaction {} reads variable {} of {} from site {}".format(t_id, v_id, dm.data_table[v_id].val, dm.site_id),'\n')
+                    print("Transaction {} reads variable {} of {} on site {}".format(t_id, v_id, dm.data_table[v_id].val, dm.site_id),'\n')
                     return True
         return False
             
@@ -100,7 +100,7 @@ class TransactionManager:
                 result = dm.read_snapshot(t_id, v_id)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
-                    print("Transaction {} reads variable {} of {} from site {}".format(t_id, v_id, dm.data_table[v_id].val, dm.site_id),'\n')
+                    print("Transaction {} reads variable {} of {} on site {}".format(t_id, v_id, dm.data_table[v_id].val, dm.site_id),'\n')
                     return True
         return False
         
@@ -115,11 +115,12 @@ class TransactionManager:
             print("Transaction {} aborts".format(t_id),'\n')
             return False
         for dm in self.dm_list:
+            # print(dm.data_table)
             if dm.is_running and v_id in dm.data_table:
                 result = dm.write(t_id, v_id, val)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
-                    print("Transaction {} writes variable {} of {} from site {}".format(t_id, v_id, dm.data_table[v_id].val, dm.site_id),'\n')
+                    print("Transaction {} writes variable {} of on site {}".format(t_id, v_id, val, dm.site_id),'\n')
                     return True
         return False
         

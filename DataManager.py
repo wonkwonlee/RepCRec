@@ -1,7 +1,7 @@
 class Variable(object):
     def __init__(self, v_id: int, replicated: bool):
-        self.v_id = v_id
-        self.val = v_id * 10
+        self.v_id = "x" + str(v_id)
+        self.val = int(v_id[1:])*10
         self.commits = {}  # transaction ID: commit timestamp
         self.readable = True
         self.replicated = replicated
@@ -54,13 +54,12 @@ class DataManager:
                 
     def read_snapshot(self, v_id: int, ts: int):
         # var = self.data_table[v_id]
+        # print(var)
+        # if not var is var.readable:
+        #     return False
+    
         return True
-        # if not var.readable:
-        #     return
-        # else:
-        #     for site in self.fail_ts:
-        #         if site < ts:
-        #             return var.val
+
            
         
     def read(self, t_id: int, v_id: int):
