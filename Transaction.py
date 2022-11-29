@@ -16,7 +16,7 @@ class Transaction:
         
         
 class ReadOnlyTransaction(Transaction):
-    def __init__(self, id: str, ts: int):
+    def __init__(self, id: str, ts: int, is_ro: bool):
         """
         Initialize a read-only transaction object.
 
@@ -31,7 +31,7 @@ class ReadOnlyTransaction(Transaction):
 
 
 class ReadWriteTransaction(Transaction):
-    def __init__(self, id: str, ts: int):
+    def __init__(self, id: str, ts: int, is_ro: bool):
         """
         Initialize a read-write transaction object.
 
