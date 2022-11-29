@@ -10,10 +10,10 @@ class TransactionManager:
     
     
     def __init__(self):
-        self.site_list = []
+        self.dm_list = []
         
-        for site in range(1, 11):
-            self.site_list.append(DataManager(site))
+        for dm in range(1, 11):
+            self.dm_list.append(DataManager(dm))
     
     def read_operation(self, t_id, v_id):
         """
@@ -37,8 +37,17 @@ class TransactionManager:
                 print("Transaction id {} not in table".format(operation.t_id))
                 self.operation_list.remove(operation)
             else:
-                
-    
+                if operation.op == 'R':
+                    if self.transaction_table[operation.t_id].is_ro:
+                        self.read_snapshot(operation.t_id, operation.v_id)
+                    else:
+                        self.read(operation.t_id, operation.v_id)
+                elif operation.op == 'W':
+                    self.write(operation.t_id, operation.v_id, operation.val)                
+                else:
+                    print("Invalid operation")
+                    
+                self.operation_list.remove(operation)
     
     '''
     Functions for instruction execution
@@ -87,6 +96,7 @@ class TransactionManager:
         """
         Write a variable from a read-write transaction.
         """
+        
         if self.transaction_table[t_id].is_aborted:
             print("Transaction id {} not in table".format(t_id))
             print("Transaction {} aborts".format(t_id),'\n')
@@ -105,8 +115,8 @@ class TransactionManager:
         """
         Dump the state of all sites.
         """
-        for site in self.site_list:
-            site.dump()
+        for dm in self.dm_list:
+            dm.dump()
                 
     def end(self, t_id):
         """
@@ -121,8 +131,8 @@ class TransactionManager:
         """
         Abort a transaction.
         """
-        for site in self.site_list:
-            site.abort(t_id)
+        for dm in self.dm_list:
+            dm.abort(t_id)
         del self.transaction_table[t_id]
         print("Transaction {} aborts".format(t_id),'\n')
 
@@ -130,8 +140,8 @@ class TransactionManager:
         """
         Commit a transaction.
         """
-        for site in self.site_list:
-            site.commit(t_id, c_ts)
+        for dm in self.dm_list:
+            dm.commit(t_id, c_ts)
         del self.transaction_table[t_id]
         print("Transaction {} commits".format(t_id),'\n')
         
@@ -139,14 +149,14 @@ class TransactionManager:
         """
         Recover a site.
         """
-        self.site_list[site_id - 1].recover(site_id, self.ts)
+        self.dm_list[site_id - 1].recover(site_id, self.ts)
         print("Site {} recovers".format(site_id),'\n')
             
     def fail(self, site_id):
         """
         Fail a site.
         """
-        self.site_list[site_id - 1].fail(site_id, self.ts)
+        self.dm_list[site_id - 1].fail(site_id, self.ts)
         print("Site {} fails".format(site_id),'\n')
         
     def getTimeStamp(self) :

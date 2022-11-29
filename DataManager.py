@@ -57,7 +57,11 @@ class DataManager:
                 if site < ts:
                     return var.val
            
-           
+    def commit(self, t_id: int, ts: int):
+        pass
+    
+    def abort(self, t_id: int):
+        pass
             
         # else:
         #     var.fail = True
