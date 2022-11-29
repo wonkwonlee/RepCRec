@@ -28,14 +28,16 @@ class TransactionManager:
         self.operation_list.append(Operation('W', t_id, v_id, val))
         
     
-    def run_operation(self, operation):
+    def run_operation(self):
         """
         Run an operation.
         """
-        if operation.operation_type == 'R':
-            self.read(operation.t_id, operation.v_id)
-        elif operation.operation_type == 'W':
-            self.write(operation.t_id, operation.v_id, operation.val)
+        for operation in self.operation_list:
+            if not operation.t_id in self.transaction_table:
+                print("Transaction id {} not in table".format(operation.t_id))
+                self.operation_list.remove(operation)
+            else:
+                
     
     
     '''
