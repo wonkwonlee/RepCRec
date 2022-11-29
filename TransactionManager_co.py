@@ -1,27 +1,16 @@
 from Transaction import Transaction, ReadOnlyTransaction, ReadWriteTransaction, Operation
 from DataManager import DataManager
-import SiteManager
-import LockManager
 
 class TransactionManager:
     transaction_table = {}
     ts = 0
     operation_list = []
     
-    
     def __init__(self):
         self.sites = []
         
         for site in range(1, 11):
             self.sites.append(DataManager(site))
-    
-    def read_opeartion(self, t_id, v_id):
-        """
-        Read operation
-        """
-        self.operation_list.append(Operation(op="read", t_id, v_id, None))
-        
-    
         
     
     '''
@@ -33,8 +22,7 @@ class TransactionManager:
         """
         self.transaction_table[t_id] = ReadWriteTransaction(t_id, self.ts, is_ro=False)
         self.ts += 1
-        # print(self.transaction_table)
-        print("Transaction {} begins with time stamp {}".format(t_id, self.ts),'\n')
+        print("Transaction {} begins".format(t_id))
     
     def beginRO(self, t_id):
         """
@@ -42,7 +30,7 @@ class TransactionManager:
         """
         self.transaction_table[t_id] = ReadOnlyTransaction(t_id, self.ts, is_ro=True)
         self.ts += 1
-        print("Read-only transaction {} begins with time stamp {}".format(t_id, self.ts),'\n')
+        print("Read-only transaction {} begins".format(t_id))
     
     def read_snapshot(self, t_id, v_id):
         """
@@ -60,44 +48,37 @@ class TransactionManager:
         
         
         if v_id not in self.transaction_table[t_id].snapshot:
-            print("Transaction {} aborts".format(t_id),'\n')
+            print("Transaction {} aborts".format(t_id))
             self.transaction_table[t_id].is_aborted = True
         else:
-            print("Transaction {} reads variable {} = {}".format(t_id, v_id, self.transaction_table[t_id].snapshot[v_id]),'\n')
+            print("Transaction {} reads variable {} = {}".format(t_id, v_id, self.transaction_table[t_id].snapshot[v_id]))
             
     def read(self, t_id, v_id):
         """
         Read a variable from a read-write transaction.
         """
         if self.transaction_table[t_id].is_aborted:
-            print("Transaction {} aborts".format(t_id),'\n')
+            print("Transaction {} aborts".format(t_id))
         else:
             if v_id not in self.transaction_table[t_id].read_values:
-                print("Transaction {} aborts".format(t_id),'\n')
+                print("Transaction {} aborts".format(t_id))
                 self.transaction_table[t_id].is_aborted = True
             else:
-                print("Transaction {} reads variable {} = {}".format(t_id, v_id, self.transaction_table[t_id].read_values[v_id]),'\n')
+                print("Transaction {} reads variable {} = {}".format(t_id, v_id, self.transaction_table[t_id].read_values[v_id]))
                 
     # TODO: Implement LOCK function
     def write(self, t_id, v_id, val):
         """
         Write a variable from a read-write transaction.
         """
-        
-        if t_id not in self.transaction_table:
-            print("Transaction {} aborts".format(t_id),'\n')
-            self.transaction_table[t_id].is_aborted = True
-        
-        # if self.transaction_table[t_id].is_aborted:
-        #     print("Transaction id {} not in table".format(t_id))
-        #     print("Transaction {} aborts".format(t_id),'\n')
+        if self.transaction_table[t_id].is_aborted:
+            print("Transaction {} aborts".format(t_id))
         else:
-            # if v_id not in self.transaction_table[t_id].write_values:
-            #     print("Transaction id {} not in table".format(t_id))
-            #     print("Transaction {} aborts".format(t_id),'\n')
-            #     self.transaction_table[t_id].is_aborted = True
-            # else:
-                print("Transaction {} writes variable {} = {}".format(t_id, v_id, val),'\n')
+            if v_id not in self.transaction_table[t_id].write_values:
+                print("Transaction {} aborts".format(t_id))
+                self.transaction_table[t_id].is_aborted = True
+            else:
+                print("Transaction {} writes variable {} = {}".format(t_id, v_id, val))
                 self.transaction_table[t_id].write_values[v_id] = val
                 self.transaction_table[t_id].write_ts[v_id] = self.ts
                 self.ts += 1
@@ -125,7 +106,7 @@ class TransactionManager:
         for site in self.sites:
             site.abort(t_id)
         del self.transaction_table[t_id]
-        print("Transaction {} aborts".format(t_id),'\n')
+        print("Transaction {} aborts".format(t_id))
 
     def commit(self, t_id, c_ts):
         """
@@ -134,7 +115,7 @@ class TransactionManager:
         for site in self.sites:
             site.commit(t_id, c_ts)
         del self.transaction_table[t_id]
-        print("Transaction {} commits".format(t_id),'\n')
+        print("Transaction {} commits".format(t_id))
         
     def recover(self, site_id):
         """
@@ -150,9 +131,4 @@ class TransactionManager:
         self.sites[site_id - 1].fail(site_id, self.ts)
         print("Site {} fails".format(site_id))
         
-    def getTimeStamp(self) :
-        """
-        Get Time Stamp
-        """
-        print("Time Stamp :: {}".format(self.ts),'\n')
-        return self.ts
+    
