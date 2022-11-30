@@ -44,6 +44,7 @@ class TransactionManager:
                 # print("Transaction id {} not in table".format(operation.t_id))
                 self.operation_list.remove(operation)
             else:
+                result = False
                 if operation.op == 'R':
                     if self.transaction_table[operation.t_id].is_ro:
                         result = self.read_snapshot(operation.t_id, operation.v_id)
