@@ -46,7 +46,7 @@ class TransactionManager:
             else:
                 result = False
                 if operation.op == 'R':
-                    print("================ TM :: RUN_OPERATION ================")
+                    # print("================ TM :: RUN_OPERATION ================")
                     print("self.transaction_table[{}].is_ro :: {}".format(operation.t_id,self.transaction_table[operation.t_id].is_ro))
                     if self.transaction_table[operation.t_id].is_ro:
                         print("Do self.read_snapshot()")
@@ -109,8 +109,8 @@ class TransactionManager:
             return False
         for dm in self.dm_list:
             if dm.is_running and v_id in dm.data_table:
-                print("================ TM :: READ ================")
-                print("v_id :: {}".format(v_id))
+                # print("================ TM :: READ ================")
+                # print("v_id :: {}".format(v_id))
                 result = dm.read(t_id, v_id)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
@@ -132,8 +132,11 @@ class TransactionManager:
         getAllWriteLocksFlag = True
         for dm in self.dm_list:
             # print(dm.data_table)
+            print(dm.is_running)
+            print(v_id in dm.data_table)
             if dm.is_running and v_id in dm.data_table:
-                result = dm.write(t_id, v_id, val)
+                # result = dm.write(t_id, v_id, val)
+                result = dm.acquire_lock(t_id, v_id)
                 sitesDownFlag = False
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
@@ -142,17 +145,17 @@ class TransactionManager:
                 else :
                     getAllWriteLocksFlag = False
 
-            if not sitesDownFlag and getAllWriteLocksFlag :
-                sitesList = {}
-                for dm in self.dm_list:
-                    # print(dm.data_table)
-                    if dm.is_running and v_id in dm.data_table:
-                        dm.write(t_id, v_id, val)
-                        self.transaction_table[t_id].visited_sites.append(dm.site_id)
-                        sitesList.append(dm.site_id)
-                print("asdfasdfasdf")
-                print("Transaction {} writes variable {} on site {} at time stamp {}".format(t_id, v_id, val, dm.site_id, self.ts),'\n')
-                return True
+        if not sitesDownFlag and getAllWriteLocksFlag :
+            sitesList = {}
+            for dm in self.dm_list:
+                # print(dm.data_table)
+                if dm.is_running and v_id in dm.data_table:
+                    dm.write(t_id, v_id, val)
+                    self.transaction_table[t_id].visited_sites.append(dm.site_id)
+                    sitesList.append(dm.site_id)
+            print("asdfasdfasdf")
+            print("Transaction {} writes variable {} on site {} at time stamp {}".format(t_id, v_id, val, dm.site_id, self.ts),'\n')
+            return True
         return False
         
         
