@@ -46,9 +46,13 @@ class TransactionManager:
             else:
                 result = False
                 if operation.op == 'R':
+                    print("================ TM :: RUN_OPERATION ================")
+                    print("self.transaction_table[{}].is_ro :: {}".format(operation.t_id,self.transaction_table[operation.t_id].is_ro))
                     if self.transaction_table[operation.t_id].is_ro:
+                        print("Do self.read_snapshot()")
                         result = self.read_snapshot(operation.t_id, operation.v_id)
                     else:
+                        print("Do self.read()")
                         result = self.read(operation.t_id, operation.v_id)
                 elif operation.op == 'W':
                     result = self.write(operation.t_id, operation.v_id, operation.val)              
@@ -86,7 +90,9 @@ class TransactionManager:
             return False
         for dm in self.dm_list:
             if dm.is_running and v_id in dm.data_table:
-                result = dm.read_snapshot(t_id, v_id)
+                print("================ TM :: READ_SNAPSHOT ================")
+                print("v_id :: {}".format(v_id))
+                result = dm.read_snapshot(v_id, self.ts)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
                     print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].val, dm.site_id, self.ts),'\n')
@@ -103,6 +109,8 @@ class TransactionManager:
             return False
         for dm in self.dm_list:
             if dm.is_running and v_id in dm.data_table:
+                print("================ TM :: READ ================")
+                print("v_id :: {}".format(v_id))
                 result = dm.read_snapshot(t_id, v_id)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)

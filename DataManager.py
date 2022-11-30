@@ -1,8 +1,10 @@
+from LockManager import LockManager
+
 class Variable(object):
     def __init__(self, v_id: int, replicated: bool):
         self.v_id = v_id
         self.val = int(v_id[1:])*10
-        self.commits = {}  # transaction ID: commit timestamp
+        self.commits = {self.val}  # transaction ID: commit timestamp
         self.readable = True
         self.replicated = replicated
         self.fail = False
@@ -23,10 +25,10 @@ class DataManager:
             v_id = "x" + str(i)
             if i % 2 == 0:
                 self.data_table[v_id] = Variable(v_id, True)
-                self.lock_table[v_id] = None
+                self.lock_table[v_id] = LockManager(v_id)
             elif i % 10 + 1 == self.site_id:
                 self.data_table[v_id] = Variable(v_id, False)
-                self.lock_table[v_id] = None
+                self.lock_table[v_id] = LockManager(v_id)
                 
                 
     def dump(self):
@@ -52,11 +54,16 @@ class DataManager:
             if v.replicated:
                 self.readable = False
                 
-    def read_snapshot(self, v_id: int, ts: int):
-        # var = self.data_table[v_id]
-        # print(var)
-        # if not var is var.readable:
-        #     return False
+    def read_snapshot(self, v_id, ts):
+        
+        print("================ DM :: READ_SNAPSHOT ================")
+        print("v_id :: {}".format(v_id))
+        # print("type of v_id :: {}".format(type(v_id)))
+        # var : Variable = self.data_table[v_id]
+        # if var.readable :
+        #     print("var :: {}".format(var))
+        #     for commit in var.commits :
+        #         a = 1
     
         return True
 
