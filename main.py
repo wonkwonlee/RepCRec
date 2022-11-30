@@ -42,6 +42,8 @@ if __name__ == '__main__':
                     continue
                 elif newLine.startswith('quit') :
                     break
+                elif newLine.startswith('===') :
+                    break
                 
                 temp = newLine.strip().strip(')')
                 temp = temp.split('(')
