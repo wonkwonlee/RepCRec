@@ -1,6 +1,6 @@
 class Variable(object):
     def __init__(self, v_id: int, replicated: bool):
-        self.v_id = "x" + str(v_id)
+        self.v_id = v_id
         self.val = int(v_id[1:])*10
         self.commits = {}  # transaction ID: commit timestamp
         self.readable = True
@@ -34,7 +34,7 @@ class DataManager:
         output = f"Site {self.site_id} - {status}"
 
         for k, v in self.data_table.items():
-            output += f" x{k}: {v.val}"
+            output += f" {k}: {v.val}"
         print(output)
         
     def fail(self, ts: int):
