@@ -1,13 +1,15 @@
 from LockManager import LockManager
+from Config import *
 
 class Variable(object):
     def __init__(self, v_id: int, replicated: bool):
         self.v_id = v_id
         self.val = int(v_id[1:])*10
-        self.commits = {self.val}  # transaction ID: commit timestamp
+        self.commit_table = [(self.ts, self.val)]  # transaction ID: commit timestamp
         self.readable = True
         self.replicated = replicated
         self.fail = False
+        self.tempVal = None
 
 
 class DataManager:
@@ -88,15 +90,43 @@ class DataManager:
         pass
     
     def write(self, t_id: int, v_id: int, val: int):
-        return True
-        pass
+        lm: LockManager = self.lock_table.get(v_id)
+        v: Variable = self.data.get(v_id)
+
+        assert lm is not None and v is not None
+        current_lock = lm.current_lock
+
+        if current_lock:
+            if current_lock.lock_type == LockType.R:
+                # If current lock is a read lock, then it must be of the same transaction,
+                # and there should be no other locks waiting in queue.
+                assert len(lock_manager.shared_read_lock) == 1 and \
+                       tid in lock_manager.shared_read_lock and \
+                       not lock_manager.has_other_write_lock(tid)
+                lock_manager.promote_current_lock(WriteLock(tid, vid))
+                v.temporary_value = TemporaryValue(value, tid)
+            else:
+                # If current lock is a write lock, then it must of the same transaction.
+                assert tid == current_lock.tid
+                v.temporary_value = TemporaryValue(value, tid)
+        else:
+            lock_manager.set_current_lock(WriteLock(tid, vid))
+            v.temporary_value = TemporaryValue(value, tid)
+
    
            
     def commit(self, t_id: int, commit_time: int):
         for lm in self.lock_table.values():
             lm.releaseCurrentLock(t_id)
 
-        pass
+        # for v in self.data.values():
+        #     if v.temporary_value is not None and v.temporary_value.tid == tid:
+        #         commit_value = v.temporary_value.value
+        #         v.add_commit_value(CommitValue(commit_value, commit_time))
+        #         v.temporary_value = None
+        #         v.is_readable = True
+        # self.update_lock_table()
+        
     
     def abort(self, t_id: int):
         pass

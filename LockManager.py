@@ -1,4 +1,5 @@
 import DataManager
+from Config import *
 
 class LockManager:
     def __init__(self, v_id):
@@ -8,7 +9,7 @@ class LockManager:
         """
         self.v_id = v_id
         self.current_lock = None
-        self.list = []  
+        self.lock_list = []  
     
     def releaseCurrentLock(self, t_id):
         pass
