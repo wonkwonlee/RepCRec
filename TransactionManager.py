@@ -19,6 +19,9 @@ class TransactionManager:
         """
         Read operation
         """
+        if not t_id in self.transaction_table:
+            print("Transaction table does not contains {}".format(t_id),'\n')
+            return False
         self.ts += 1
         self.operation_list.append(Operation('R', t_id, v_id, None))
     
@@ -26,6 +29,9 @@ class TransactionManager:
         """
         Write operation
         """
+        if not t_id in self.transaction_table:
+            print("Transaction table does not contains {}".format(t_id),'\n')
+            return False
         self.ts += 1
         self.operation_list.append(Operation('W', t_id, v_id, val))
     
