@@ -9,7 +9,7 @@ class LockManager:
         """
         self.v_id = v_id
         self.current_lock = None
-        self.lock_list = []  
+        self.list = []  
     
     def releaseCurrentLock(self, t_id):
         pass

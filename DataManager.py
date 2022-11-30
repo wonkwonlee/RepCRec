@@ -78,11 +78,6 @@ class DataManager:
                     return True
         return False
 
-                    
-
-    
-        return True
-
            
         
     def read(self, t_id: int, v_id: int):
@@ -134,6 +129,7 @@ class DataManager:
         # else:
         #     var.fail = True
         #     var.val = None
+        
     def acquire_lock(self, t_id: int, v_id: int):
         return True
         pass
