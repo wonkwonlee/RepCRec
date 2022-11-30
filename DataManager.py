@@ -5,7 +5,7 @@ class Variable(object):
     def __init__(self, v_id: int, replicated: bool):
         self.v_id = v_id
         self.val = int(v_id[1:])*10
-        self.commit_table = [(self.ts, self.val)]  # transaction ID: commit timestamp
+        self.commit_list = [self.val]  # transaction ID: commit timestamp
         self.readable = True
         self.replicated = replicated
         self.fail = False

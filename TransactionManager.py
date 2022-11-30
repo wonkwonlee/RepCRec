@@ -248,3 +248,32 @@ class TransactionManager:
             
                 for k, v in g.items():
                     block_graph[k] = v
+        
+        new_t_id = None
+        new_ts = None
+        
+        for k in list(block_graph.keys()):
+            visited = set()
+            if self.detect_cycle(k, k, block_graph, visited):
+                if self.transaction_table[k].ts > new_ts:
+                    new_t_id = k
+                    new_ts = self.transaction_table[k].ts
+        
+        if new_t_id:
+            print("Deadlock detected, aborting transaction {}".format(new_t_id),'\n')
+            self.abort(new_t_id)
+            return True
+        return False
+    
+    
+    def detect_cycle(self, src, dest, graph, visited):
+        visited.add(src)
+        
+        for adj in graph[src]:
+            if adj == dest:
+                return True
+            if adj not in visited:
+                if self.detect_cycle(adj, dest, graph, visited):
+                    return True
+        return False
+            
