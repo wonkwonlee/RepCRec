@@ -60,17 +60,18 @@ if __name__ == '__main__':
 
                 ts += 1
 
-                if method.startswith('begin'):
+
+                if method == "begin":
                     p1 = temp[1]
                     print(method, p1)
                     tm.begin(p1)
 
-                elif method.startswith('beginRO'):
+                elif method == "beginRO":
                     p1 = temp[1]
                     print(method, p1)
                     tm.beginRO(p1)
 
-                elif method.startswith('W'):
+                elif method == "W":
                     args = temp[1].split(',')
                     p1 = args[0]
                     p2 = args[1]
@@ -79,29 +80,29 @@ if __name__ == '__main__':
                     tm.write_operation(p1, p2, p3)
 
 
-                elif method.startswith('R'):
+                elif method == "R":
                     args = temp[1].split(',')
                     p1 = args[0]
                     p2 = args[1]
                     print(method, p1, p2)
                     tm.read_operation(p1, p2)
 
-                elif method.startswith('fail'):
+                elif method == "fail":
                     p1 = temp[1]
                     print(method, p1)
                     tm.fail(p1)
 
-                elif method.startswith('recover'):
+                elif method == "recover":
                     p1 = temp[1]
                     print(method, p1)
                     tm.recover(p1)
 
-                elif method.startswith('end'):
+                elif method == "end":
                     p1 = temp[1]
                     print(method, p1)
                     tm.end(p1)
 
-                elif method.startswith('dump'):
+                elif method == "dump":
                     print(method)
                     tm.dump()
                     
