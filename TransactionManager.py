@@ -120,14 +120,31 @@ class TransactionManager:
         if not t_id in self.transaction_table:
             print("Transaction {} aborts".format(t_id),'\n')
             return False
+        sitesDownFlag = True
+        getAllWriteLocksFlag = True
         for dm in self.dm_list:
             # print(dm.data_table)
             if dm.is_running and v_id in dm.data_table:
                 result = dm.write(t_id, v_id, val)
+                sitesDownFlag = False
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
                     print("Transaction {} writes variable {} on site {} at time stamp {}".format(t_id, v_id, val, dm.site_id, self.ts),'\n')
                     return True
+                else :
+                    getAllWriteLocksFlag = False
+
+            if not sitesDownFlag and getAllWriteLocksFlag :
+                sitesList = {}
+                for dm in self.dm_list:
+                    # print(dm.data_table)
+                    if dm.is_running and v_id in dm.data_table:
+                        dm.write(t_id, v_id, val)
+                        self.transaction_table[t_id].visited_sites.append(dm.site_id)
+                        sitesList.append(dm.site_id)
+                print("asdfasdfasdf")
+                print("Transaction {} writes variable {} on site {} at time stamp {}".format(t_id, v_id, val, dm.site_id, self.ts),'\n')
+                return True
         return False
         
         
@@ -143,19 +160,25 @@ class TransactionManager:
         """
         End a transaction.
         """
+        if not t_id in self.transaction_table:
+            print("Transaction table does not contains {}".format(t_id),'\n')
+            return False
         if self.transaction_table[t_id].is_aborted:
-            self.abort(t_id)
+            self.abort(t_id, True)
         else:
             self.commit(t_id, self.ts)
             
-    def abort(self, t_id):
+    def abort(self, t_id, siteFailFlag = False):
         """
         Abort a transaction.
         """
         for dm in self.dm_list:
             dm.abort(t_id)
         del self.transaction_table[t_id]
-        print("Transaction {} aborts at time stamp {}".format(t_id, self.ts),'\n')
+        if siteFailFlag :
+            print("Transaction {} aborts at time stamp {} due to site failure".format(t_id, self.ts),'\n')
+        else:
+            print("Transaction {} aborts at time stamp {} due to deadlock".format(t_id, self.ts),'\n')
 
     def commit(self, t_id, ts):
         """
@@ -170,6 +193,8 @@ class TransactionManager:
         """
         Recover a site.
         """
+        if not self.dm_list[int(site_id) - 1] :
+            print("Site {} is already down".format(site_id))
         self.ts += 1
         self.dm_list[int(site_id) - 1].recover(self.ts)
         print("Site {} recovers at time stamp {}".format(site_id, self.ts),'\n')
@@ -178,9 +203,19 @@ class TransactionManager:
         """
         Fail a site.
         """
+        if not self.dm_list[int(site_id) - 1] :
+            print("Site {} is already down".format(site_id))
         self.ts += 1
         self.dm_list[int(site_id) - 1].fail(self.ts)    
         print("Site {} fails".format(site_id),'\n')
+
+        # TODO
+        # for t in self.transaction_table.values():
+        #     if (not t.is_ro) and (not t.will_abort) and (
+        #             site_id in t.sites_accessed):
+        #         # not applied to read-only transaction
+        #         t.will_abort = True
+        #         # print("{} will abort!!!".format(t.transaction_id))
         
     def getTimeStamp(self) :
         """
