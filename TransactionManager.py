@@ -141,8 +141,6 @@ class TransactionManager:
                 if not result:
                     getAllWriteLocksFlag = False
                 
-                    
-
         if not sitesDownFlag and getAllWriteLocksFlag :
             sitesList = []
             for dm in self.dm_list:
@@ -213,11 +211,18 @@ class TransactionManager:
         """
         Fail a site.
         """
-        if not self.dm_list[int(site_id) - 1] :
+        if not self.dm_list[int(site_id) - 1].is_running:
             print("Site {} is already down".format(site_id))
+            return
         self.ts += 1
         self.dm_list[int(site_id) - 1].fail(self.ts)    
         print("Site {} fails".format(site_id),'\n')
+        
+        for k, v in self.transaction_table.items():
+            if not v.is_running and not v.is_aborted and site_id in v.visited_sites:
+                v.is_aborted = True
+                return
+        
 
         # TODO
         # for t in self.transaction_table.values():
@@ -233,3 +238,13 @@ class TransactionManager:
         """
         print("Time Stamp :: {}".format(self.ts),'\n')
         return self.ts
+    
+    def detect_deadlock(self):
+        block_graph = dict(set)
+        
+        for dm in self.dm_list:
+            if dm.is_running:
+                g = dm.initialize_block_graph()
+            
+                for k, v in g.items():
+                    block_graph[k] = v

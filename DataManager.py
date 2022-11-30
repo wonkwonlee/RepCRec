@@ -4,7 +4,7 @@ class Variable(object):
     def __init__(self, v_id: int, replicated: bool):
         self.v_id = v_id
         self.val = int(v_id[1:])*10
-        self.commits = {self.val}  # transaction ID: commit timestamp
+        self.commit_table = [(self.ts, self.val)]  # transaction ID: commit timestamp
         self.readable = True
         self.replicated = replicated
         self.fail = False
@@ -76,11 +76,6 @@ class DataManager:
                     return True
         return False
 
-                    
-
-    
-        return True
-
            
         
     def read(self, t_id: int, v_id: int):
@@ -104,6 +99,7 @@ class DataManager:
         # else:
         #     var.fail = True
         #     var.val = None
+        
     def acquire_lock(self, t_id: int, v_id: int):
         return True
         pass
