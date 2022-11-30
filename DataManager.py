@@ -58,12 +58,26 @@ class DataManager:
         
         print("================ DM :: READ_SNAPSHOT ================")
         print("v_id :: {}".format(v_id))
-        # print("type of v_id :: {}".format(type(v_id)))
-        # var : Variable = self.data_table[v_id]
-        # if var.readable :
-        #     print("var :: {}".format(var))
-        #     for commit in var.commits :
-        #         a = 1
+        var : Variable = self.data_table[v_id]
+        if var.readable :
+            print("================ DM :: READ_SNAPSHOT :: Var.Readable :) ================")
+            for commit in var.commits :
+                print("commit :: {}".format(commit))
+                print("ts :: {}".format(ts))
+                if commit <= ts : 
+                    print("commit <= ts")
+                    if var.replicated:
+                        print("var.replicated")
+                        for fail in self.fail_ts:
+                            print("fail :: {}".format(fail))
+                            if commit < fail and fail <= ts :
+                                # print("if commit < fail and fail <= ts")
+                                return False
+                    return True
+        return False
+
+                    
+
     
         return True
 
@@ -78,7 +92,10 @@ class DataManager:
         pass
    
            
-    def commit(self, t_id: int, ts: int):
+    def commit(self, t_id: int, commit_time: int):
+        for lm in self.lock_table.values():
+            lm.releaseCurrentLock(t_id)
+
         pass
     
     def abort(self, t_id: int):
@@ -90,3 +107,16 @@ class DataManager:
     def acquire_lock(self, t_id: int, v_id: int):
         return True
         pass
+
+class CommitValue:
+    """Represents a committed value of a variable."""
+
+    def __init__(self, value, ts):
+        """
+        Initialize a CommitValue instance.
+        :param value: the committed value
+        :param commit_ts: the timestamp of the commit
+        """
+        self.value = value
+        self.cm_ts = ts
+
