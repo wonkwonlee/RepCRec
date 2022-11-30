@@ -111,7 +111,7 @@ class TransactionManager:
             if dm.is_running and v_id in dm.data_table:
                 print("================ TM :: READ ================")
                 print("v_id :: {}".format(v_id))
-                result = dm.read_snapshot(t_id, v_id)
+                result = dm.read(t_id, v_id)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
                     print("Transaction {} reads variable {} of {} on site {}".format(t_id, v_id, dm.data_table[v_id].val, dm.site_id),'\n')

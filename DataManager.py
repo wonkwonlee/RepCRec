@@ -54,7 +54,7 @@ class DataManager:
             if v.replicated:
                 self.readable = False
                 
-    def read_snapshot(self, v_id, ts):
+    def read_snapshot(self, v_id, ts:int):
         
         print("================ DM :: READ_SNAPSHOT ================")
         print("v_id :: {}".format(v_id))
