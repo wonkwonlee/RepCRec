@@ -58,17 +58,17 @@ class TransactionManager:
         """
         Begin a new transaction.
         """
-        self.transaction_table[t_id] = Transaction(t_id, self.ts, is_ro=False)
         self.ts += 1
-        print("Transaction {} begins with time stamp {}".format(t_id, self.ts),'\n')
+        self.transaction_table[t_id] = Transaction(t_id, self.ts, is_ro=False)
+        print("Transaction {} begins at time stamp {}".format(t_id, self.ts),'\n')
     
     def beginRO(self, t_id):
         """
         Begin a new read-only transaction.
         """
-        self.transaction_table[t_id] = Transaction(t_id, self.ts, is_ro=True)
         self.ts += 1
-        print("Read-only transaction {} begins with time stamp {}".format(t_id, self.ts),'\n')
+        self.transaction_table[t_id] = Transaction(t_id, self.ts, is_ro=True)
+        print("Read-only transaction {} begins at time stamp {}".format(t_id, self.ts),'\n')
     
     def read_snapshot(self, t_id, v_id):
         """
@@ -82,7 +82,7 @@ class TransactionManager:
                 result = dm.read_snapshot(t_id, v_id)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
-                    print("Transaction {} reads variable {} of {} on site {}".format(t_id, v_id, dm.data_table[v_id].val, dm.site_id),'\n')
+                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].val, dm.site_id, self.ts),'\n')
                     return True
         return False
             
@@ -119,7 +119,7 @@ class TransactionManager:
                 result = dm.write(t_id, v_id, val)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
-                    print("Transaction {} writes variable {} of on site {}".format(t_id, v_id, val, dm.site_id),'\n')
+                    print("Transaction {} writes variable {} on site {} at time stamp {}".format(t_id, v_id, val, dm.site_id, self.ts),'\n')
                     return True
         return False
         
@@ -148,7 +148,7 @@ class TransactionManager:
         for dm in self.dm_list:
             dm.abort(t_id)
         del self.transaction_table[t_id]
-        print("Transaction {} aborts".format(t_id),'\n')
+        print("Transaction {} aborts at time stamp {}".format(t_id, self.ts),'\n')
 
     def commit(self, t_id, ts):
         """
@@ -157,7 +157,7 @@ class TransactionManager:
         for dm in self.dm_list:
             dm.commit(t_id, ts)
         del self.transaction_table[t_id]
-        print("Transaction {} commits".format(t_id),'\n')
+        print("Transaction {} commits at time stamp {}".format(t_id, self.ts),'\n')
         
     def recover(self, site_id):
         """
@@ -165,7 +165,7 @@ class TransactionManager:
         """
         self.ts += 1
         self.dm_list[int(site_id) - 1].recover(self.ts)
-        print("Site {} recovers".format(site_id),'\n')
+        print("Site {} recovers at time stamp {}".format(site_id, self.ts),'\n')
             
     def fail(self, site_id):
         """
