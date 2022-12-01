@@ -142,3 +142,9 @@ class QueuedLock:
         """Custom print for debugging purpose."""
         return "({}, {}, {})".format(
             self.transaction_id, self.variable_id, self.lock_type)
+
+class Lock:
+    def __init__(self, tid: str, vid: str, lock_type: LockType) -> None:
+        self.tid = tid  # transaction id
+        self.vid = vid  # variable id
+        self.lock_type = lock_type  # either R or W

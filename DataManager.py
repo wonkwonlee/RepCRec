@@ -88,27 +88,32 @@ class DataManager:
     
     def write(self, t_id: int, v_id: int, val: int):
         lm: LockManager = self.lock_table[v_id]
-        v: Variable = self.data_table[v_id]
+        var: Variable = self.data_table[v_id]
 
-        assert lm is not None and v is not None
+        assert lm is not None and var is not None
         current_lock = lm.current_lock
-
-        # if current_lock:
+        print("================ DM :: def write() ================")
+        print("lm :: {}".format(lm))
+        print("var :: {}".format(var))
+        print("current_lock :: {}".format(current_lock))
+        if current_lock:
+            
+            print("current_lock.lock_type :: {}".format(current_lock.lock_type))
         #     if current_lock.lock_type == LockType.R:
         #         # If current lock is a read lock, then it must be of the same transaction,
         #         # and there should be no other locks waiting in queue.
-        #         assert len(lock_manager.shared_read_lock) == 1 and \
-        #                tid in lock_manager.shared_read_lock and \
-        #                not lock_manager.has_other_write_lock(tid)
-        #         lock_manager.promote_current_lock(WriteLock(tid, vid))
-        #         v.temporary_value = TemporaryValue(value, tid)
+        #         assert len(lm.shared_read_lock) == 1 and \
+        #                t_id in lm.shared_read_lock and \
+        #                not lm.has_other_write_lock(t_id)
+        #         lm.promote_current_lock(WriteLock(t_id, v_id))
+        #         v.temporary_value = TemporaryValue(value, t_id)
         #     else:
         #         # If current lock is a write lock, then it must of the same transaction.
         #         assert tid == current_lock.tid
-        #         v.temporary_value = TemporaryValue(value, tid)
+        #         v.temporary_value = TemporaryValue(value, t_id)
         # else:
-        #     lock_manager.set_current_lock(WriteLock(tid, vid))
-        #     v.temporary_value = TemporaryValue(value, tid)
+        #     lm.set_current_lock(WriteLock(t_id, v_id))
+        #     v.temporary_value = TemporaryValue(value, t_id)
 
    
            
@@ -133,8 +138,39 @@ class DataManager:
         #     var.val = None
         
     def acquire_lock(self, t_id: int, v_id: int):
+        lm: LockManager = self.lock_table[v_id]
+        current_lock = lm.current_lock
+        if current_lock:
+            if current_lock.lock_type == LockType.R:
+                if len(current_lock.transaction_id_set) != 1:
+                    # Multiple transactions holding R-lock on the same variable
+                    lm.add_to_queue(
+                        QueuedLock(v_id, t_id, LockType.W))
+                    return False
+                # Only one transaction holding an R-lock
+                # Which one?
+                if t_id in current_lock.transaction_id_set:
+                    # Only this transaction holds the R-lock
+                    # Can it be promoted to W-lock?
+                    if lm.has_other_queued_write_lock(t_id):
+                        lm.add_to_queue(
+                            QueuedLock(v_id, t_id, LockType.W))
+                        return False
+                    return True
+                # One other transaction is holding the R-lock
+                lm.add_to_queue(
+                    QueuedLock(v_id, transaction_id, LockType.W))
+                return False
+            # current lock is W-lock
+            if transaction_id == current_lock.transaction_id:
+                # This transaction already holds a W-lock
+                return True
+            # Another transaction is holding W-lock
+            lm.add_to_queue(
+                QueuedLock(v_id, transaction_id, LockType.W))
+            return False
+        # No existing lock on the variable
         return True
-        pass
 
     def has_variable(self, variable_id):
         """

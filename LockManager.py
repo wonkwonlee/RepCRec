@@ -1,5 +1,6 @@
 import DataManager
 from Config import *
+
 class LockManager:
     def __init__(self, v_id):
         """
@@ -9,6 +10,7 @@ class LockManager:
         self.v_id = v_id
         self.current_lock = None
         self.lock_list = []  
+        self.sharedReadLock = []
 
     def clear_lock(self):
         """
@@ -29,4 +31,14 @@ class LockManager:
         pass
 
     def releaseCurrentLock(self, t_id):
+        pass
+
+    def share_read_lock(self, t_id):
+        """
+        Share the R-lock with another transaction.
+        :param transaction_id: the id of the transaction acquiring the R-lock
+        """
+        # if not self.current_lock.lock_type == LockType.R:
+        #     raise RuntimeError("Attempt to share W-lock!")
+        # self.current_lock.t_id_set.add(t_id)
         pass
