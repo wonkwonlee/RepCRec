@@ -123,43 +123,73 @@ class TransactionManager:
         
     
     # TODO: Implement LOCK function
-    def write(self, t_id, v_id, val):
-        """
-        Write a variable from a read-write transaction.
-        """
-        if not t_id in self.transaction_table:
-            print("Transaction {} aborts".format(t_id),'\n')
-            return False
-        sitesDownFlag = True
-        getAllWriteLocksFlag = True
-        for dm in self.dm_list:
-            # print(dm.data_table)
-            # print(dm.is_running)
-            # print(v_id in dm.data_table)
-            #if dm.is_running and v_id in dm.data_table:
-            if dm.is_running and dm.has_variable(v_id):
-                #print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-                # result = dm.write(t_id, v_id, val)
-                result = dm.get_write_lock(t_id, v_id)
+    # def write(self, t_id, v_id, val):
+    #     """
+    #     Write a variable from a read-write transaction.
+    #     """
+    #     if not t_id in self.transaction_table:
+    #         print("Transaction {} aborts".format(t_id),'\n')
+    #         return False
+    #     sitesDownFlag = True
+    #     getAllWriteLocksFlag = True
+    #     for dm in self.dm_list:
+    #         # print(dm.data_table)
+    #         # print(dm.is_running)
+    #         # print(v_id in dm.data_table)
+    #         #if dm.is_running and v_id in dm.data_table:
+    #         if dm.is_running and dm.has_variable(v_id):
+    #             #print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    #             # result = dm.write(t_id, v_id, val)
+    #             result = dm.get_write_lock(t_id, v_id)
                 
-                sitesDownFlag = False
-                if not result:
-                    print("Transaction Waiting")
-                    getAllWriteLocksFlag = False
+    #             sitesDownFlag = False
+    #             if not result:
+    #                 #print("Transaction Waiting")
+    #                 getAllWriteLocksFlag = False
                 
-        if not sitesDownFlag and getAllWriteLocksFlag :
-            sitesList = []
-            for dm in self.dm_list:
-                # print(dm.data_table)
-                if dm.is_running and v_id in dm.data_table:
-                    dm.write(t_id, v_id, val)
-                    self.transaction_table[t_id].visited_sites.append(dm.site_id)
-                    sitesList.append(dm.site_id)
-            # print("****************************************")
-            print("Transaction {} writes variable {} with value {} on site {} at time stamp {}".format(t_id, v_id, val, dm.site_id, self.ts),'\n')
+    #     if not sitesDownFlag and getAllWriteLocksFlag :
+    #         sitesList = []
+    #         for dm in self.dm_list:
+    #             # print(dm.data_table)
+    #             if dm.is_running and v_id in dm.data_table:
+    #                 dm.write(t_id, v_id, val)
+    #                 self.transaction_table[t_id].visited_sites.append(dm.site_id)
+    #                 sitesList.append(dm.site_id)
+    #         # print("****************************************")
+    #         print("Transaction {} writes variable {} with value {} on site {} at time stamp {}".format(t_id, v_id, val, dm.site_id, self.ts),'\n')
 
+    #         return True
+    #     return False
+
+    def write(self, t_id, v_id, val):
+            if not t_id in self.transaction_table:
+                print("Transaction {} aborts".format(t_id),'\n')
+                print()
+                return False
+            target_sites = []
+
+            for site in [x for x in self.dm_list if (x.has_variable(v_id) and x.is_running)]:
+                # If current site is up and has the certain vid, then try to get its write lock.
+                # The write operation can only be applied when have all the write locks of up sites.
+                write_lock = site.get_write_lock(t_id, v_id)
+                if not write_lock:
+                    print("{} waits due to write lock conflict. Current lock : {}.".format(t_id, site.lock_table[v_id].current_lock))
+                    print()
+                    return False
+                target_sites.append(int(site.site_id))
+
+            # If no site satisfies the writing condition, then fail to write.
+            if not target_sites:
+                print()
+                return False
+            # Otherwise, write to all the up sites that contains the vid.
+            for target_sid in target_sites:
+                target_site = self.dm_list[target_sid - 1]
+                target_site.write(t_id, v_id, val)
+                self.transaction_table[t_id].visited_sites.append(target_sid)
+            print("Transaction {} writes variable {} with value {} to sites {}.".format(t_id, v_id, val, target_sites))
+            print()
             return True
-        return False
         
         
     
