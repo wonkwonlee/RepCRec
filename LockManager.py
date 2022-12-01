@@ -1,6 +1,5 @@
 import DataManager
 from Config import *
-
 class LockManager:
     def __init__(self, v_id):
         """

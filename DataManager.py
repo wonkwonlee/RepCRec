@@ -63,20 +63,22 @@ class DataManager:
         var : Variable = self.data_table[v_id]
         if var.readable :
             print("================ DM :: READ_SNAPSHOT :: Var.Readable :) ================")
-            for commit in var.commits :
+            for commit in var.commit_list :
                 print("commit :: {}".format(commit))
                 print("ts :: {}".format(ts))
-                if commit <= ts : 
+                if commit.cm_ts <= ts : 
                     print("commit <= ts")
                     if var.replicated:
                         print("var.replicated")
                         for fail in self.fail_ts:
                             print("fail :: {}".format(fail))
-                            if commit < fail and fail <= ts :
-                                # print("if commit < fail and fail <= ts")
-                                return False
-                    return True
-        return False
+                            if commit.cm_ts < fail and fail <= ts :
+                                print("if commit < fail and fail <= ts")
+                                return Result(False)
+
+                    print("Result(True, commit.value)")
+                    return Result(True, commit.value)
+        return Result(False)
 
            
         
@@ -133,5 +135,13 @@ class DataManager:
     def acquire_lock(self, t_id: int, v_id: int):
         return True
         pass
+
+    def has_variable(self, variable_id):
+        """
+        Check if a variable is stored at this site.
+        """
+        return self.data_table.get(variable_id)
+
+    
 
 
