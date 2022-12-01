@@ -2,37 +2,6 @@ from LockManager2 import LockManager2
 from Config import *
 from collections import defaultdict
 
-class Variable(object):
-    def __init__(self, v_id: int, init_val, replicated: bool):
-        self.v_id = v_id
-        self.val = int(v_id[1:])*10
-        self.commit_list = [init_val]  # transaction ID: commit timestamp
-        self.readable = True
-        self.replicated = replicated
-        self.fail = False
-        self.temp_value = None
-
-    def get_last_committed_value(self):
-        """
-        :return: the latest committed value
-        """
-        return self.commit_list[0].val
-
-    def get_temp_value(self):
-        """
-        :return: the temporary value written by a transaction holding a W-lock
-        """
-        if not self.temp_value:
-            raise RuntimeError("No temp value!")
-        return self.temp_value.val
-
-    def add_commit_value(self, commit_value):
-        """
-        Insert a CommitValue object to the front of the committed value list.
-        :param commit_value: a CommitValue object
-        """
-        self.commit_list.insert(0, commit_value)
-
 class DataManager:
     def __init__(self, site_id: int):
         self.site_id = site_id
@@ -364,4 +333,3 @@ class DataManager:
                     if queued_blocks_queued(lm.queue[j], lm.queue[i]):
                         graph[lm.queue[i].t_id].add(lm.queue[j].t_id)
         return graph
-

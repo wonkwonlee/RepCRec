@@ -60,7 +60,12 @@ if __name__ == '__main__':
 
                 ts += 1
 
-
+                if tm.detect_deadlock2():
+                     print("=========================== DEAD LOCK DETECHTED ===========================")
+                     tm.run_operation()
+                #else:
+                tm.run_operation()
+                
                 if method == "begin":
                     p1 = temp[1]
                     print(method, p1)
@@ -109,15 +114,6 @@ if __name__ == '__main__':
                 else :
                     print("Unrecognized Command. Abort The Program")
                     break
-                
-                if tm.resolve_deadlock():
-                    # print("=========================== DEAD LOCK DETECHTED ===========================")
-                     tm.run_operation()
-                #else:
-                tm.run_operation()
-                    
-                
-
 
         except IOError:
             print("CAN'T OPEN FILE {}".format(inputSource))

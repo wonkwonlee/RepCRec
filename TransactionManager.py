@@ -368,15 +368,73 @@ class TransactionManager:
         return False
 
 
-def has_cycle(current, root, visited, blocking_graph):
-    """Helper function that detects cycle in blocking graph using dfs."""
-    visited.add(current)
-    for neighbour in blocking_graph[current]:
-        if neighbour == root:
-            return True
-        if neighbour not in visited:
-            if has_cycle(neighbour, root, visited, blocking_graph):
+    def has_cycle(current, root, visited, blocking_graph):
+        """Helper function that detects cycle in blocking graph using dfs."""
+        visited.add(current)
+        for neighbour in blocking_graph[current]:
+            if neighbour == root:
                 return True
-    return False
+            if neighbour not in visited:
+                if has_cycle(neighbour, root, visited, blocking_graph):
+                    return True
+        return False
 
             
+    def detect_deadlock2(self) -> bool:
+        """Detect if there is a deadlock among existing transactions.
+        """
+        blocking_graph = self.generate_blocking_graph2(self.dm_list)
+        victim = self.detect2(self.transaction_table, blocking_graph)
+        if victim is not None:
+            print("Found deadlock, aborts the youngest transaction {}".format(victim))
+            self.abort(victim)
+            return True
+        return False
+
+
+    def generate_blocking_graph2(self, sites) -> defaultdict:
+        """
+        Collect blocking information from all up sites, and generate
+        a complete blocking graph for all the existing transactions.
+        """
+        blocking_graph = defaultdict(set)
+        for site in [x for x in sites if x.is_running]:
+            graph = site.generate_blocking_graph()
+            for tid, adjacent_tid_set in graph.items():
+                blocking_graph[tid].update(adjacent_tid_set)
+        return blocking_graph
+
+
+    def has_cycle2(self, start, end, visited, blocking_graph) -> bool:
+        """Use DFS to judge if there is a cycle in the blocking graph.
+        Principle:
+            For all the arcs that starts from a node, if this node's parent
+            existed as the end of an arc, then there is a cycle in the graph.
+        """
+        visited[start] = True
+        for adjacent_tid in blocking_graph[start]:
+            if adjacent_tid == end:
+                return True
+            if not visited[adjacent_tid]:
+                if self.has_cycle2(adjacent_tid, end, visited, blocking_graph):
+                    return True
+        return False
+
+
+    def detect2(self, transaction_table, blocking_graph):
+        """
+        Find out if there is a cycle in the blocking graph. If so, then there exists
+        a deadlock, and this function will return the youngest transaction id. Otherwise,
+        return nothing.
+        """
+        victim_timestamp = float('-inf')
+        victim_tid = None
+        # To avoid `RuntimeError: dictionary changed size during iteration`,
+        # we should use list() function or .copy() method.
+        for tid in list(blocking_graph.keys()):
+            visited = defaultdict(bool)
+            if self.has_cycle2(tid, tid, visited, blocking_graph):
+                if transaction_table[tid].ts > victim_timestamp:
+                    victim_timestamp = transaction_table[tid].ts
+                victim_tid = tid
+        return victim_tid
