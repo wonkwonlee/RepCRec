@@ -33,7 +33,7 @@ class TransactionManager:
         """
         if not t_id in self.transaction_table:
             print("Transaction table does not contains {}".format(t_id),'\n')
-            return False
+            return
         self.ts += 1
         self.operation_list.append(Operation('W', t_id, v_id, val))
     
@@ -186,10 +186,13 @@ class TransactionManager:
             for target_sid in target_sites:
                 target_site = self.dm_list[target_sid - 1]
                 target_site.write(t_id, v_id, val)
+                # print(target_site.data_table[v_id])
+                # print(target_site.data_table[v_id].val)
                 self.transaction_table[t_id].visited_sites.append(target_sid)
             print("Transaction {} writes variable {} with value {} to sites {}.".format(t_id, v_id, val, target_sites))
             print()
             return True
+        
         
         
     

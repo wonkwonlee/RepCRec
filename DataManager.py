@@ -28,7 +28,8 @@ class DataManager:
         output = f"Site {self.site_id} - {status}"
 
         for k, v in self.data_table.items():
-            output += f" {k}: {v.val}"
+            # output += f" {k}: {v.get_last_commit_value()}"
+            output += " {} : {}".format(k, v.get_last_committed_value())
         print(output)
         
     def fail(self, ts: int):
@@ -161,6 +162,8 @@ class DataManager:
             if v.temp_value and v.temp_value.t_id == t_id:
                 v.add_commit_value(CommitValue(v.temp_value.value, commit_ts))
                 v.readable = True
+                # print("v.temp_value {}".format(v.temp_value.value))
+                print("v's commit_list {}".format(v.commit_list[0].value))
         self.resolve_lock_table()
         
     

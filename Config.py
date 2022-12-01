@@ -146,10 +146,11 @@ class Lock:
         self.tid = tid  # transaction id
         self.vid = vid  # variable id
         self.lock_type = lock_type  # either R or W
+        
 class Variable(object):
     def __init__(self, v_id: int, init_val, replicated: bool):
         self.v_id = v_id
-        self.val = int(v_id[1:])*10
+        # self.val = int(v_id[1:])*10
         self.commit_list = [init_val]  # transaction ID: commit timestamp
         self.readable = True
         self.replicated = replicated
@@ -160,7 +161,7 @@ class Variable(object):
         """
         :return: the latest committed value
         """
-        return self.commit_list[0].val
+        return self.commit_list[0].value
 
     def get_temp_value(self):
         """
@@ -168,7 +169,7 @@ class Variable(object):
         """
         if not self.temp_value:
             raise RuntimeError("No temp value!")
-        return self.temp_value.val
+        return self.temp_value.value
 
     def add_commit_value(self, commit_value):
         """
