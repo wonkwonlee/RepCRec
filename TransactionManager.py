@@ -7,20 +7,21 @@ class TransactionManager:
     """
     Initialize a transaction manager class.
     """
-    transaction_table = {}
-    ts = 0
-    operation_list = []
     
+    transaction_table = {}  # Transaction table
+    operation_list = []     # List of read/write operations
+    ts = 0
     
     def __init__(self):
-        self.dm_list = []
+        self.dm_list = []   # List of data managers
         
+        # Initialize all 10 sites
         for dm in range(1, 11):
             self.dm_list.append(DataManager(dm))
     
     def read_operation(self, t_id, v_id):
         """
-        Read operation
+        Add read operation to the operation list.
         
         Args:
             t_id (int): Transaction id
@@ -74,9 +75,7 @@ class TransactionManager:
                 if result:   
                     self.operation_list.remove(operation)
     
-    '''
-    Functions for instruction execution
-    '''  
+    
     def begin(self, t_id):
         """
         Begin a new transaction.
@@ -117,7 +116,7 @@ class TransactionManager:
                 result = dm.read_snapshot(v_id, self.ts)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
-                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].val, dm.site_id, self.ts),'\n')
+                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].commits[0].val, dm.site_id, self.ts),'\n')
                     return True
         return False
             
@@ -140,51 +139,11 @@ class TransactionManager:
                 result = dm.read(t_id, v_id)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
-                    print("Transaction {} reads variable {} of {} on site {}".format(t_id, v_id, dm.data_table[v_id].val, dm.site_id),'\n')
+                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].commits[0].val, dm.site_id, self.ts),'\n')
                     return True
         return False
         
-        
     
-    # TODO: Implement LOCK function
-    # def write(self, t_id, v_id, val):
-    #     """
-    #     Write a variable from a read-write transaction.
-    #     """
-    #     if not t_id in self.transaction_table:
-    #         print("Transaction {} aborts".format(t_id),'\n')
-    #         return False
-    #     sitesDownFlag = True
-    #     getAllWriteLocksFlag = True
-    #     for dm in self.dm_list:
-    #         # print(dm.data_table)
-    #         # print(dm.is_running)
-    #         # print(v_id in dm.data_table)
-    #         #if dm.is_running and v_id in dm.data_table:
-    #         if dm.is_running and dm.has_variable(v_id):
-    #             #print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-    #             # result = dm.write(t_id, v_id, val)
-    #             result = dm.get_write_lock(t_id, v_id)
-                
-    #             sitesDownFlag = False
-    #             if not result:
-    #                 #print("Transaction Waiting")
-    #                 getAllWriteLocksFlag = False
-                
-    #     if not sitesDownFlag and getAllWriteLocksFlag :
-    #         sitesList = []
-    #         for dm in self.dm_list:
-    #             # print(dm.data_table)
-    #             if dm.is_running and v_id in dm.data_table:
-    #                 dm.write(t_id, v_id, val)
-    #                 self.transaction_table[t_id].visited_sites.append(dm.site_id)
-    #                 sitesList.append(dm.site_id)
-    #         # print("****************************************")
-    #         print("Transaction {} writes variable {} with value {} on site {} at time stamp {}".format(t_id, v_id, val, dm.site_id, self.ts),'\n')
-
-    #         return True
-    #     return False
-
     def write(self, t_id, v_id, val):
         """
         Write a variable from a read-write transaction.
@@ -296,22 +255,7 @@ class TransactionManager:
             if not v.is_ro and not v.is_aborted and site_id in v.visited_sites:
                 v.is_aborted = True
                 return
-        
 
-        # TODO
-        # for t in self.transaction_table.values():
-        #     if (not t.is_ro) and (not t.will_abort) and (
-        #             site_id in t.sites_accessed):
-        #         # not applied to read-only transaction
-        #         t.will_abort = True
-        #         # print("{} will abort!!!".format(t.transaction_id))
-        
-    def getTimeStamp(self) :
-        """
-        Get Time Stamp
-        """
-        print("Time Stamp :: {}".format(self.ts),'\n')
-        return self.ts
     
     def detect_cycle(self, src, dest, graph, visited):
         visited.add(src)

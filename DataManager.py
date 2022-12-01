@@ -10,7 +10,7 @@ class DataManager:
         site_id (int): Site ID
     """
     def __init__(self, site_id: int):
-        self.site_id = site_id
+        self.site_id = site_id      # Site ID
         self.is_running = True      # Flag to indicate if the site is running
         self.data_table = {}        # Dictionary of variables stored at this site
         self.lock_table = {}        # Dictionary of lock managers for each variable
@@ -20,11 +20,11 @@ class DataManager:
 
         # Initialize data variables
         for i in range(1, 21):
-            v_id = "x" + str(i)
-            if i % 2 == 0:
+            v_id = "x" + str(i)    # Variable ID: x1, x2, ..., x20
+            if i % 2 == 0:       # Even variables are replicated
                 self.data_table[v_id] = Variable(v_id, CommitValue(i*10,0), True)
                 self.lock_table[v_id] = LockManager2(v_id)
-            elif i % 10 + 1 == self.site_id:
+            elif i % 10 + 1 == self.site_id:    # Odd variables are not replicated
                 self.data_table[v_id] = Variable(v_id, CommitValue(i*10,0), False)
                 self.lock_table[v_id] = LockManager2(v_id)
                 
@@ -37,11 +37,16 @@ class DataManager:
         output = f"Site {self.site_id} - {status}"
 
         for k, v in self.data_table.items():
-            # output += f" {k}: {v.get_last_commit_value()}"
-            output += " {} : {}".format(k, v.get_last_committed_value())
+            output += " {} : {}".format(k, v.commits[0].val)
         print(output)
         
     def fail(self, ts: int):
+        """
+        Fail the site and clear the lock table.
+        
+        Args:
+            ts (int): Timestamp when the site failed
+        """
         self.is_running = False
         self.fail_ts.append(ts)
 
@@ -49,6 +54,12 @@ class DataManager:
             self.lock_table[k] = None
     
     def recover(self, ts: int):
+        """
+        Recover the site and set the site status is running.
+
+        Args:
+            ts (int): Timestamp when the site recovered
+        """
         self.is_running = True
         self.recover_ts.append(ts)
 
@@ -60,23 +71,17 @@ class DataManager:
         # print("================ DM :: READ_SNAPSHOT ================")
         # print("v_id :: {}".format(v_id))
         var : Variable = self.data_table[v_id]
-        if var.readable :
-            # print("================ DM :: READ_SNAPSHOT :: Var.Readable :) ================")
-            for commit in var.commit_list :
-                # print("commit :: {}".format(commit))
-                # print("ts :: {}".format(ts))
-                if commit.cm_ts <= ts : 
-                    # print("commit <= ts")
+        
+        if not var.readable:
+            return Result(False)
+        else:
+            for c in var.commits:
+                if c.cm_ts <= ts:
                     if var.replicated:
-                        # print("var.replicated")
-                        for fail in self.fail_ts:
-                            # print("fail :: {}".format(fail))
-                            if commit.cm_ts < fail and fail <= ts :
-                                # print("if commit < fail and fail <= ts")
+                        for f in self.fail_ts:
+                            if c.cm_ts < f and f <= ts:
                                 return Result(False)
-                    return Result(True, commit.value)
-        return Result(False)
-
+                    return Result(True, c.val)
            
         
     def read(self, t_id: int, v_id: int):
@@ -88,10 +93,10 @@ class DataManager:
             if current_lock:
                 if current_lock.lock_type == LockType.READ:
                     if t_id in current_lock.transaction_id_set:
-                        return Result(True, var.commit_list[0].value)
+                        return Result(True, var.commits[0].val)
                     if not lm.has_other_queued_write_lock():
                         lm.share_read_lock(t_id)
-                        return Result(True, var.commit_list[0].value)
+                        return Result(True, var.commits[0].val)
                     lm.add_queue(QueuedLock(t_id, v_id, LockType.READ))
                     return Result(False, None)
                 
@@ -103,7 +108,7 @@ class DataManager:
             
 
             lm.set_current_lock(ReadLock(t_id, v_id))
-            return Result(True, var.commit_list[0].value)
+            return Result(True, var.commits[0].val)
         
         return Result(False, None)
         
@@ -152,7 +157,7 @@ class DataManager:
         :param transaction_id: transaction's id
         :param commit_ts: the timestamp of the commit
         """
-        for lm in self.lock_table.values():
+        for _, lm in self.lock_table.items():
             # release current lock held by this transaction
             lm.release_current_lock_by_transaction(t_id)
             # there shouldn't be any queued locks of this transaction
@@ -167,12 +172,12 @@ class DataManager:
                     # raise RuntimeError("{} cannot commit with unresolved queued locks!".format(t_id))
         # commit temp values
         #print("((((((((((((((((((((((((((((((((((((((((")
-        for v in self.data_table.values():
+        for _, v in self.data_table.items():
             if v.temp_value and v.temp_value.t_id == t_id:
-                v.add_commit_value(CommitValue(v.temp_value.value, commit_ts))
+                v.add_commit_value(CommitValue(v.temp_value.val, commit_ts))
                 v.readable = True
                 # print("v.temp_value {}".format(v.temp_value.value))
-                print("v's commit_list {}".format(v.commit_list[0].value))
+                # print("v's commits {}".format(v.commits[0].val))
         self.resolve_lock_table()
         
     
@@ -181,7 +186,7 @@ class DataManager:
         Abort the transaction and release its locks.
         :param transaction_id: transaction's id
         """
-        for lm in self.lock_table.values():
+        for _, lm in self.lock_table.items():
             # release current lock held by this transaction
             lm.release_current_lock_by_transaction(t_id)
             # remove queued locks of this transaction
@@ -274,7 +279,7 @@ class DataManager:
         """
         self.is_up = False
         self.fail_ts.append(ts)
-        for lm in self.lock_table.values():
+        for _, lm in self.lock_table.items():
             lm.clear()
 
     def recover(self, ts):

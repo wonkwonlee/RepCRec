@@ -1,5 +1,11 @@
 from Config import *
 class LockManager2:
+    """
+    Lock manager instance that manages locks for a variable.
+    
+    """
+    
+    
     """Manages both current lock and queued locks of a certain variable."""
 
     def __init__(self, variable_id):

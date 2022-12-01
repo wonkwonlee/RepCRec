@@ -1,5 +1,37 @@
 from enum import Enum
 
+class Transaction:
+    """
+    Initialize a transaction object.
+
+    Args:
+        id (str): Transaction ID
+        ts (int): Timestamp of when the transaction began
+        is_ro (bool): Whether the transaction is read-only
+    """
+    def __init__(self, id: str, ts: int, is_ro: bool):
+        self.id = id
+        self.ts = ts
+        self.is_ro = is_ro
+        self.is_aborted = False     # will abort if deadlock
+        self.visited_sites = []     # sites visited by this transaction
+        
+class Operation(object):
+    """
+    Initialize an operation object.
+
+    Args:
+        op (str): Operation type (read/write)
+        t_id (str): Transaction ID
+        v_id (int): Variable ID
+        val (int): Value to write (if write operation)
+    """
+    def __init__(self, op: str, t_id: str, v_id: int, val: int=None):
+        self.op = op
+        self.t_id = t_id
+        self.v_id = v_id
+        self.val = val
+        
 
 class SiteStatus(Enum):
     UP = 1
@@ -52,37 +84,37 @@ class OperationType(Enum):
 class CommitValue:
     """Represents a committed value of a variable."""
 
-    def __init__(self, value, ts):
+    def __init__(self, val, ts):
         """
         Initialize a CommitValue instance.
         :param value: the committed value
         :param commit_ts: the timestamp of the commit
         """
-        self.value = value
+        self.val = val
         self.cm_ts = ts
 
 class Result:
     """Helper class that stores the result of a read or write action."""
 
-    def __init__(self, success, value=None):
+    def __init__(self, success, val=None):
         """
         Initialize a Result instance.
         :param success: indicate if the result is successful or not
         :param value: result's value (optional)
         """
         self.success = success
-        self.value = value
+        self.val = val
 
 class TempValue:
     """Saves the temporary written value before the transaction commits."""
 
-    def __init__(self, value, t_id):
+    def __init__(self, val, t_id):
         """
         Initialize a TempValue instance.
         :param value: temporary value written by a transaction holding W-lock
         :param transaction_id: the id of the transaction holding W-lock
         """
-        self.value = value
+        self.val = val
         self.t_id = t_id
 
 class ReadLock:
@@ -151,29 +183,29 @@ class Variable(object):
     def __init__(self, v_id: int, init_val, replicated: bool):
         self.v_id = v_id
         # self.val = int(v_id[1:])*10
-        self.commit_list = [init_val]  # transaction ID: commit timestamp
+        self.commits = [init_val]  # transaction ID: commit timestamp
         self.readable = True
         self.replicated = replicated
         self.fail = False
         self.temp_value = None
 
-    def get_last_committed_value(self):
-        """
-        :return: the latest committed value
-        """
-        return self.commit_list[0].value
+    # def get_last_committed_value(self):
+    #     """
+    #     :return: the latest committed value
+    #     """
+    #     return self.commits[0].val
 
-    def get_temp_value(self):
-        """
-        :return: the temporary value written by a transaction holding a W-lock
-        """
-        if not self.temp_value:
-            raise RuntimeError("No temp value!")
-        return self.temp_value.value
+    # def get_temp_value(self):
+    #     """
+    #     :return: the temporary value written by a transaction holding a W-lock
+    #     """
+    #     if not self.temp_value:
+    #         raise RuntimeError("No temp value!")
+    #     return self.temp_value.val
 
     def add_commit_value(self, commit_value):
         """
         Insert a CommitValue object to the front of the committed value list.
         :param commit_value: a CommitValue object
         """
-        self.commit_list.insert(0, commit_value)
+        self.commits.insert(0, commit_value)
