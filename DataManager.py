@@ -58,34 +58,58 @@ class DataManager:
                 
     def read_snapshot(self, v_id, ts:int):
         
-        print("================ DM :: READ_SNAPSHOT ================")
-        print("v_id :: {}".format(v_id))
+        # print("================ DM :: READ_SNAPSHOT ================")
+        # print("v_id :: {}".format(v_id))
         var : Variable = self.data_table[v_id]
         if var.readable :
-            print("================ DM :: READ_SNAPSHOT :: Var.Readable :) ================")
-            for commit in var.commit_list :
-                print("commit :: {}".format(commit))
-                print("ts :: {}".format(ts))
-                if commit.cm_ts <= ts : 
-                    print("commit <= ts")
+            # print("================ DM :: READ_SNAPSHOT :: Var.Readable :) ================")
+            for commit in var.commits :
+                # print("commit :: {}".format(commit))
+                # print("ts :: {}".format(ts))
+                if commit <= ts : 
+                    # print("commit <= ts")
                     if var.replicated:
-                        print("var.replicated")
+                        # print("var.replicated")
                         for fail in self.fail_ts:
-                            print("fail :: {}".format(fail))
-                            if commit.cm_ts < fail and fail <= ts :
-                                print("if commit < fail and fail <= ts")
-                                return Result(False)
-
-                    print("Result(True, commit.value)")
-                    return Result(True, commit.value)
-        return Result(False)
+                            # print("fail :: {}".format(fail))
+                            if commit < fail and fail <= ts :
+                                # print("if commit < fail and fail <= ts")
+                                return False
+                    return True
+        return False
 
            
         
     def read(self, t_id: int, v_id: int):
-        return True
-        pass
-    
+        var: Variable = self.data_table[v_id]
+        if var.readable:
+            lm: LockManager = self.lock_table[v_id]
+            current_lock = lm.current_lock
+            
+            if current_lock:
+                if current_lock.lock_type == LockType.READ:
+                    if t_id in current_lock.transaction_id_set:
+                        return Result(True, var.commit_list[0].value)
+                    if not lm.has_write_lock(t_id):
+                        lm.share_lock(t_id)
+                        return Result(True, var.commit_list[0].value)
+                    lm.add_queue(QueuedLock(t_id, v_id, LockType.READ))
+                    return Result(False, None)
+                
+                elif current_lock.lock_type == LockType.WRITE:
+                    if t_id == current_lock.transaction_id:
+                        return Result(True, var.tempVal)
+                    lm.add_queue(QueuedLock(t_id, v_id, LockType.READ))
+                    return Result(False, None)
+            
+
+            lm.set_lock(ReadLock(t_id, v_id))
+            return Result(True, var.commit_list[0].value)
+        
+        return Result(False, None)
+        
+        
+        
     def write(self, t_id: int, v_id: int, val: int):
         lm: LockManager = self.lock_table[v_id]
         v: Variable = self.data_table[v_id]
@@ -112,7 +136,8 @@ class DataManager:
 
    
            
-    def commit(self, t_id: int, commit_time: int):
+    def commit(self, t_id: int, c_ts: int):
+        print(self.lock_table)
         for lm in self.lock_table.values():
             lm.releaseCurrentLock(t_id)
 
