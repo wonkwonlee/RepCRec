@@ -3,14 +3,20 @@ from Config import *
 from collections import defaultdict
 
 class DataManager:
+    """
+    Initialize a data manager which manages all of the variables at a site.
+    
+    Args:
+        site_id (int): Site ID
+    """
     def __init__(self, site_id: int):
         self.site_id = site_id
-        self.is_running = True
-        self.data_table = {}
-        self.lock_table = {}
-        self.fail_ts = []
-        self.recover_ts = []
-        self.readable = set()
+        self.is_running = True      # Flag to indicate if the site is running
+        self.data_table = {}        # Dictionary of variables stored at this site
+        self.lock_table = {}        # Dictionary of lock managers for each variable
+        self.fail_ts = []           # List of timestamps when the site failed
+        self.recover_ts = []        # List of timestamps when the site recovered
+        self.readable = set()       # Set of variables that are readable at this site
 
         # Initialize data variables
         for i in range(1, 21):
@@ -24,6 +30,9 @@ class DataManager:
                 
                 
     def dump(self):
+        """
+        Dump all variables at this site and print them out.
+        """
         status = "running" if self.is_running else "failed"
         output = f"Site {self.site_id} - {status}"
 
