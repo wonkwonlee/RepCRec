@@ -1,7 +1,9 @@
 from Transaction import Transaction, ReadOnlyTransaction, ReadWriteTransaction, Operation
 from DataManager import DataManager
 import SiteManager
-import LockManager
+import LockManager2
+from Config import *
+from collections import defaultdict
 
 class TransactionManager:
     transaction_table = {}
@@ -134,11 +136,15 @@ class TransactionManager:
             # print(dm.data_table)
             # print(dm.is_running)
             # print(v_id in dm.data_table)
-            if dm.is_running and v_id in dm.data_table:
+            #if dm.is_running and v_id in dm.data_table:
+            if dm.is_running and dm.has_variable(v_id):
+                #print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
                 # result = dm.write(t_id, v_id, val)
-                result = dm.acquire_lock(t_id, v_id)
+                result = dm.get_write_lock(t_id, v_id)
+                
                 sitesDownFlag = False
                 if not result:
+                    print("Transaction Waiting")
                     getAllWriteLocksFlag = False
                 
         if not sitesDownFlag and getAllWriteLocksFlag :
@@ -250,6 +256,33 @@ class TransactionManager:
                     return True
         return False    
     
+    def resolve_deadlock(self):
+        """
+        Detect deadlocks using cycle detection and abort the youngest
+        transaction in the cycle.
+        :return: True if a deadlock is resolved, False if no deadlock detected
+        """
+        blocking_graph = defaultdict(set)
+        for dm in self.dm_list:
+            if dm.is_running:
+                graph = dm.generate_blocking_graph()
+                for node, adj_list in graph.items():
+                    blocking_graph[node].update(adj_list)
+        # print(dict(blocking_graph))
+        youngest_t_id = None
+        youngest_ts = -1
+        for node in list(blocking_graph.keys()):
+            visited = set()
+            if has_cycle(node, node, visited, blocking_graph):
+                if self.transaction_table[node].ts > youngest_ts:
+                    youngest_t_id = node
+                    youngest_ts = self.transaction_table[node].ts
+        if youngest_t_id:
+            print("Deadlock detected: aborting {}".format(youngest_t_id))
+            self.abort(youngest_t_id)
+            return True
+        return False
+
     def detect_deadlock(self):
         block_graph = dict(set)
         
@@ -276,6 +309,44 @@ class TransactionManager:
             return True
         return False
     
-    
+    def solve_deadlock(self):
+        """
+        Detect deadlocks using cycle detection and abort the youngest
+        transaction in the cycle.
+        :return: True if a deadlock is resolved, False if no deadlock detected
+        """
+        blocking_graph = defaultdict(set)
+        for dm in self.dm_list:
+            #if dm.is_running and v_id in dm.data_table:
+            if dm.is_running:
+                graph = dm.generate_blocking_graph()
+                for node, adj_list in graph.items():
+                    blocking_graph[node].update(adj_list)
+        # print(dict(blocking_graph))
+        youngest_t_id = None
+        youngest_ts = -1
+        for node in list(blocking_graph.keys()):
+            visited = set()
+            if has_cycle(node, node, visited, blocking_graph):
+                if self.transaction_table[node].ts > youngest_ts:
+                    youngest_t_id = node
+                    youngest_ts = self.transaction_table[node].ts
+        if youngest_t_id:
+            print("Deadlock detected: aborting {}".format(youngest_t_id))
+            self.abort(youngest_t_id)
+            return True
+        return False
+
+
+def has_cycle(current, root, visited, blocking_graph):
+    """Helper function that detects cycle in blocking graph using dfs."""
+    visited.add(current)
+    for neighbour in blocking_graph[current]:
+        if neighbour == root:
+            return True
+        if neighbour not in visited:
+            if has_cycle(neighbour, root, visited, blocking_graph):
+                return True
+    return False
 
             

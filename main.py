@@ -109,9 +109,14 @@ if __name__ == '__main__':
                 else :
                     print("Unrecognized Command. Abort The Program")
                     break
-
-                if not deadlock_detected:
-                    tm.run_operation()
+                
+                if tm.resolve_deadlock():
+                    # print("=========================== DEAD LOCK DETECHTED ===========================")
+                     tm.run_operation()
+                #else:
+                tm.run_operation()
+                    
+                
 
 
         except IOError:

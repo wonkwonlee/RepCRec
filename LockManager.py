@@ -43,3 +43,13 @@ class LockManager:
         #     raise RuntimeError("Attempt to share W-lock!")
         # self.current_lock.t_id_set.add(t_id)
         pass
+
+    def has_write_lock(self, t_id):
+        pass
+
+    def share_lock(self, t_id):
+        pass
+
+    def add_queue(self, t_id):
+        pass
+

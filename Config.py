@@ -88,60 +88,58 @@ class TempValue:
 class ReadLock:
     """Represents a current Read lock."""
 
-    def __init__(self, variable_id, transaction_id):
+    def __init__(self, v_id, t_id):
         """
         Initialize a ReadLock instance.
         :param variable_id: variable's id for the R-lock
         :param transaction_id: transaction's id for the R-lock
         """
-        self.variable_id = variable_id
+        self.v_id = v_id
         # multiple transactions could share a R-lock
-        self.transaction_id_set = {transaction_id}
-        self.lock_type = LockType.R
+        self.transaction_id_set = {t_id}
+        self.lock_type = LockType.READ
 
     def __repr__(self):
         """Custom print for debugging purpose."""
         return "({}, {}, {})".format(
-            self.transaction_id_set, self.variable_id, self.lock_type)
+            self.transaction_id_set, self.v_id, self.lock_type)
 
 
 class WriteLock:
     """Represents a current Write lock."""
 
-    def __init__(self, variable_id, transaction_id):
+    def __init__(self, v_id, t_id):
         """
         Initialize a WriteLock instance.
         :param variable_id: variable's id for the W-lock
         :param transaction_id: transaction's id for the W-lock
         """
-        self.variable_id = variable_id
-        self.transaction_id = transaction_id
-        self.lock_type = LockType.W
+        self.v_id = v_id
+        self.t_id = t_id
+        self.lock_type = LockType.WRITE
 
     def __repr__(self):
         """Custom print for debugging purpose."""
-        return "({}, {}, {})".format(
-            self.transaction_id, self.variable_id, self.lock_type)
+        return "({}, {}, {})".format(self.t_id, self.v_id, self.lock_type)
 
 
 class QueuedLock:
     """Represents a lock in queue."""
 
-    def __init__(self, variable_id, transaction_id, lock_type: LockType):
+    def __init__(self, v_id, t_id, lock_type: LockType):
         """
         Initialize a QueuedLock instance.
         :param variable_id: variable's id for the queued lock
         :param transaction_id: transaction's id for the queued lock
         :param lock_type: either R or W type
         """
-        self.variable_id = variable_id
-        self.transaction_id = transaction_id
+        self.v_id = v_id
+        self.t_id = t_id
         self.lock_type = lock_type  # Q-lock could be either read or write
 
     def __repr__(self):
         """Custom print for debugging purpose."""
-        return "({}, {}, {})".format(
-            self.transaction_id, self.variable_id, self.lock_type)
+        return "({}, {}, {})".format(self.t_id, self.v_id, self.lock_type)
 
 class Lock:
     def __init__(self, tid: str, vid: str, lock_type: LockType) -> None:
