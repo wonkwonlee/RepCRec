@@ -15,12 +15,12 @@ class LockManager2:
         """
         self.variable_id = variable_id
         self.current_lock = None
-        self.queue = []  # list of QueuedLock
+        self.wait_lock = []  # list of QueuedLock
 
     def clear(self):
         """Clean up both current lock and lock queue."""
         self.current_lock = None
-        self.queue = []
+        self.wait_lock = []
 
     def set_current_lock(self, lock):
         """
@@ -60,14 +60,14 @@ class LockManager2:
         Add a new QueuedLock into lock queue.
         :param new_lock: the new QueuedLock
         """
-        for queued_lock in self.queue:
+        for queued_lock in self.wait_lock:
             if queued_lock.t_id == new_lock.t_id:
                 # transaction holds the same type of lock or the new lock is
                 # a R-lock when already had locks in queue
                 if queued_lock.lock_type == new_lock.lock_type or \
                         new_lock.lock_type == LockType.READ:
                     return
-        self.queue.append(new_lock)
+        self.wait_lock.append(new_lock)
 
     def has_other_queued_write_lock(self, t_id=None):
         """
@@ -76,7 +76,7 @@ class LockManager2:
          this transaction will be ignored.
         :return: boolean value to indicate if existing queued W-lock
         """
-        for queued_lock in self.queue:
+        for queued_lock in self.wait_lock:
             if queued_lock.lock_type == LockType.WRITE:
                 if t_id and queued_lock.t_id == t_id:
                     continue

@@ -1,14 +1,14 @@
 import sys
-import os
-
 import TransactionManager
-import SiteManager
-import DataManager
 
 ts = 0
 
 if __name__ == '__main__':
-
+    """
+    Read input from the command line and check for error
+        : check number of inputs
+        : check if the file exists
+    """
     if len(sys.argv) != 2:
         print('INCORRECT INPUT')
         sys.exit(1)
@@ -24,15 +24,14 @@ if __name__ == '__main__':
     # print()
 
     tm = TransactionManager.TransactionManager()
-    sm = SiteManager.SiteManager()
-    
-    deadlock_detected = False
-
     if fileName :
         #print("INPUT :: {}".format(inputSource))
         try:
             #print("OPEN SUCCESSFULLY :: {}".format(inputSource))
-
+            """
+            Start Parsing and look for operation : begin, beginRO, W, R, fail, recover, end, dump
+            Look for a deadlock before operation. 
+            """
             for line in inputSource:
                 if line == "":
                     continue
@@ -63,7 +62,7 @@ if __name__ == '__main__':
                 if tm.detect_deadlock2():
                      print("=========================== DEAD LOCK DETECHTED ===========================")
                      tm.run_operation()
-                     
+
                 if method == "begin":
                     p1 = temp[1]
                     print(method, p1)
@@ -113,9 +112,7 @@ if __name__ == '__main__':
                     print("Unrecognized Command. Abort The Program")
                     break
 
-                #else:
                 tm.run_operation()
 
         except IOError:
             print("CAN'T OPEN FILE {}".format(inputSource))
-

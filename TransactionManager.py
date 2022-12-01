@@ -7,7 +7,6 @@ class TransactionManager:
     """
     Initialize a transaction manager class.
     """
-    
     transaction_table = {}  # Transaction table
     operation_list = []     # List of read/write operations
     ts = 0
@@ -35,7 +34,7 @@ class TransactionManager:
     
     def write_operation(self, t_id, v_id, val):
         """
-        Write operation
+        Add write operation to the operation list.
         
         Args:
             t_id (int): Transaction id
@@ -116,7 +115,7 @@ class TransactionManager:
                 result = dm.read_snapshot(v_id, self.ts)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
-                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].commits[0].val, dm.site_id, self.ts),'\n')
+                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].val_list[0].val, dm.site_id, self.ts),'\n')
                     return True
         return False
             
@@ -139,7 +138,7 @@ class TransactionManager:
                 result = dm.read(t_id, v_id)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
-                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].commits[0].val, dm.site_id, self.ts),'\n')
+                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].val_list[0].val, dm.site_id, self.ts),'\n')
                     return True
         return False
         
@@ -164,7 +163,7 @@ class TransactionManager:
             # The write operation can only be applied when have all the write locks of up sites.
             write_lock = site.get_write_lock(t_id, v_id)
             if not write_lock:
-                print("{} waits due to write lock conflict. Current lock : {}.".format(t_id, site.lock_table[v_id].current_lock))
+                print("Write lock conflict found. Transaction {} is waiting.".format(t_id))
                 print()
                 return False
             target_sites.append(int(site.site_id))
@@ -184,8 +183,7 @@ class TransactionManager:
         print()
         return True
         
-        
-        
+       
     
     def dump(self):
         """
@@ -198,7 +196,7 @@ class TransactionManager:
         """
         End a transaction.
         
-        ArgL
+        Arg:
             t_id (int): Transaction id
         """
         if not t_id in self.transaction_table:
