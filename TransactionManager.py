@@ -219,7 +219,7 @@ class TransactionManager:
         print("Site {} fails".format(site_id),'\n')
         
         for k, v in self.transaction_table.items():
-            if not v.is_running and not v.is_aborted and site_id in v.visited_sites:
+            if not v.is_ro and not v.is_aborted and site_id in v.visited_sites:
                 v.is_aborted = True
                 return
         
@@ -239,12 +239,23 @@ class TransactionManager:
         print("Time Stamp :: {}".format(self.ts),'\n')
         return self.ts
     
+    def detect_cycle(self, src, dest, graph, visited):
+        visited.add(src)
+        
+        for adj in graph[src]:
+            if adj == dest:
+                return True
+            if adj not in visited:
+                if self.detect_cycle(adj, dest, graph, visited):
+                    return True
+        return False    
+    
     def detect_deadlock(self):
         block_graph = dict(set)
         
         for dm in self.dm_list:
             if dm.is_running:
-                g = dm.initialize_block_graph()
+                g = dm.initialize_block_graph(self.dm_list)
             
                 for k, v in g.items():
                     block_graph[k] = v
@@ -266,14 +277,5 @@ class TransactionManager:
         return False
     
     
-    def detect_cycle(self, src, dest, graph, visited):
-        visited.add(src)
-        
-        for adj in graph[src]:
-            if adj == dest:
-                return True
-            if adj not in visited:
-                if self.detect_cycle(adj, dest, graph, visited):
-                    return True
-        return False
+
             
