@@ -2,10 +2,10 @@ from LockManager import LockManager
 from Config import *
 
 class Variable(object):
-    def __init__(self, v_id: int, replicated: bool):
+    def __init__(self, v_id: int, init_val, replicated: bool):
         self.v_id = v_id
         self.val = int(v_id[1:])*10
-        self.commit_list = [self.val]  # transaction ID: commit timestamp
+        self.commit_list = [init_val]  # transaction ID: commit timestamp
         self.readable = True
         self.replicated = replicated
         self.fail = False
@@ -26,10 +26,10 @@ class DataManager:
         for i in range(1, 21):
             v_id = "x" + str(i)
             if i % 2 == 0:
-                self.data_table[v_id] = Variable(v_id, True)
+                self.data_table[v_id] = Variable(v_id, CommitValue(i*10,0), True)
                 self.lock_table[v_id] = LockManager(v_id)
             elif i % 10 + 1 == self.site_id:
-                self.data_table[v_id] = Variable(v_id, False)
+                self.data_table[v_id] = Variable(v_id, CommitValue(i*10,0), False)
                 self.lock_table[v_id] = LockManager(v_id)
                 
                 
@@ -85,28 +85,28 @@ class DataManager:
         pass
     
     def write(self, t_id: int, v_id: int, val: int):
-        lm: LockManager = self.lock_table.get(v_id)
-        v: Variable = self.data.get(v_id)
+        lm: LockManager = self.lock_table[v_id]
+        v: Variable = self.data_table[v_id]
 
         assert lm is not None and v is not None
         current_lock = lm.current_lock
 
-        if current_lock:
-            if current_lock.lock_type == LockType.R:
-                # If current lock is a read lock, then it must be of the same transaction,
-                # and there should be no other locks waiting in queue.
-                assert len(lock_manager.shared_read_lock) == 1 and \
-                       tid in lock_manager.shared_read_lock and \
-                       not lock_manager.has_other_write_lock(tid)
-                lock_manager.promote_current_lock(WriteLock(tid, vid))
-                v.temporary_value = TemporaryValue(value, tid)
-            else:
-                # If current lock is a write lock, then it must of the same transaction.
-                assert tid == current_lock.tid
-                v.temporary_value = TemporaryValue(value, tid)
-        else:
-            lock_manager.set_current_lock(WriteLock(tid, vid))
-            v.temporary_value = TemporaryValue(value, tid)
+        # if current_lock:
+        #     if current_lock.lock_type == LockType.R:
+        #         # If current lock is a read lock, then it must be of the same transaction,
+        #         # and there should be no other locks waiting in queue.
+        #         assert len(lock_manager.shared_read_lock) == 1 and \
+        #                tid in lock_manager.shared_read_lock and \
+        #                not lock_manager.has_other_write_lock(tid)
+        #         lock_manager.promote_current_lock(WriteLock(tid, vid))
+        #         v.temporary_value = TemporaryValue(value, tid)
+        #     else:
+        #         # If current lock is a write lock, then it must of the same transaction.
+        #         assert tid == current_lock.tid
+        #         v.temporary_value = TemporaryValue(value, tid)
+        # else:
+        #     lock_manager.set_current_lock(WriteLock(tid, vid))
+        #     v.temporary_value = TemporaryValue(value, tid)
 
    
            
@@ -134,15 +134,4 @@ class DataManager:
         return True
         pass
 
-class CommitValue:
-    """Represents a committed value of a variable."""
-
-    def __init__(self, value, ts):
-        """
-        Initialize a CommitValue instance.
-        :param value: the committed value
-        :param commit_ts: the timestamp of the commit
-        """
-        self.value = value
-        self.cm_ts = ts
 

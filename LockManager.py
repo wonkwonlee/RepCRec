@@ -28,3 +28,6 @@ class LockManager:
 
     def initialize_block_graph(sites):
         pass
+
+    def releaseCurrentLock(self, t_id):
+        pass

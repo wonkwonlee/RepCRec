@@ -48,3 +48,15 @@ class OperationType(Enum):
     RECOVER = 6
     DUMP = 7
     END = 8
+
+class CommitValue:
+    """Represents a committed value of a variable."""
+
+    def __init__(self, value, ts):
+        """
+        Initialize a CommitValue instance.
+        :param value: the committed value
+        :param commit_ts: the timestamp of the commit
+        """
+        self.value = value
+        self.cm_ts = ts
