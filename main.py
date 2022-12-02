@@ -1,7 +1,7 @@
 """
 Created on Friday, 2022-12-02
 
-Author: Wonkwon Lee, Young Il Kim
+Author: Young Il Kim
 
 """
 
@@ -12,7 +12,8 @@ ts = 0
 
 if __name__ == '__main__':
     """
-    Read input from the command line and check for error
+    Main function to run the program.
+    Read the input file from the command line and process each operation.
         : check number of inputs
         : check if the file exists
     """
@@ -67,7 +68,7 @@ if __name__ == '__main__':
                 ts += 1
                 
                 if tm.detect_deadlock():
-                     print("=========================== DEAD LOCK DETECHTED ===========================")
+                     print("DEADLOCK DETECTED!")
                      tm.run_operation()
 
                 if method == "begin":
@@ -87,7 +88,6 @@ if __name__ == '__main__':
                     p3 = args[2]
                     print(method, p1, p2, p3)
                     tm.write_operation(p1, p2, p3)
-
 
                 elif method == "R":
                     args = temp[1].split(',')
@@ -116,7 +116,7 @@ if __name__ == '__main__':
                     tm.dump()
                     
                 else :
-                    print("Unrecognized Command. Abort The Program")
+                    print("Unrecognized command. Abort the program")
                     break
 
                 tm.run_operation()

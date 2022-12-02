@@ -6,8 +6,7 @@ Author: Wonkwon Lee, Young Il Kim
 """
 from Config import *
 
-
-class LockManager:
+class LockManager(object):
     """
     Lock manager is responsible for managing read lock, write lock, and lock queue.
     A lock manager stores variable id, current lock, and a list of lock in queue.
@@ -21,14 +20,14 @@ class LockManager:
         """
         self.v_id = v_id
         self.lock = None
-        self.queue = []
+        self.lock_queue = []
 
     def clear(self):
         """
         Empty the current lock and the lock queue.
         """
         self.lock = None
-        self.queue = []
+        self.lock_queue = []
 
     def set_lock(self, lock):
         """
@@ -76,17 +75,17 @@ class LockManager:
         Args:
             queue (QLock): Lock to be added to the queue
         """
-        for queued_lock in self.queue:
+        for queued_lock in self.lock_queue:
             if queued_lock.t_id == queue.t_id:
                 if queued_lock.type == queue.type or queue.type == LockType.READ:
                     return
-        self.queue.append(queue)
+        self.lock_queue.append(queue)
         
         
         
 ###################################################################################################
 ######################################## TODO #####################################################
-##################################################################################################
+###################################################################################################
     def has_other_queued_write_lock(self, t_id=None):
         """
         Check if there's any other W-lock waiting in the queue.
@@ -94,7 +93,7 @@ class LockManager:
          this transaction will be ignored.
         :return: boolean value to indicate if existing queued W-lock
         """
-        for queued_lock in self.queue:
+        for queued_lock in self.lock_queue:
             if queued_lock.type == LockType.WRITE:
                 if t_id and queued_lock.t_id == t_id:
                     continue

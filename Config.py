@@ -6,7 +6,7 @@ Author: Wonkwon Lee, Young Il Kim
 """
 from enum import Enum
 
-class Transaction:
+class Transaction(object):
     """
     Transaction object that stores the transaction id, timestamp, and a flag to indicate read-only.
 
@@ -156,7 +156,7 @@ class RLock(object):
         self.v_id = v_id
         self.type = LockType.READ
 
-class WLock:
+class WLock(object):
     """
     Write lock is an exclusive lock, so only one transaction can hold the write lock.
     
@@ -172,9 +172,9 @@ class WLock:
         self.v_id = v_id
         self.type = LockType.WRITE
 
-class QLock:
+class QLock(object):
     """
-    Queue lock is a lock that is waiting to be acquired.
+    Queue lock stores the transaction waiting for the lock.
     
     Args:
         t_id (int): Transaction ID
@@ -183,7 +183,7 @@ class QLock:
     """
     def __init__(self, t_id: int, v_id: int, lock_type: LockType):
         """
-        Constructor to initialize a waiting lock object.
+        Constructor to initialize a lock queue object.
         """
         self.t_id = t_id
         self.v_id = v_id

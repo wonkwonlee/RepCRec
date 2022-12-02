@@ -4,11 +4,11 @@ Created on Friday, 2022-12-02
 Author: Wonkwon Lee, Young Il Kim
 
 """
-from DataManager import DataManager
 from Config import *
+from DataManager import DataManager
 from collections import defaultdict
 
-class TransactionManager:
+class TransactionManager(object):
     """
     Initialize a transaction manager class. Each transaction manager has a list of data managers, transaction table, and operation list.
     Data manager list is initialized with 10 data managers.
@@ -19,10 +19,10 @@ class TransactionManager:
     
     def __init__(self):
         self.dm_list = []   # List of data managers
-        for dm in range(1, 11):     # Initialize all 10 sites
+        for dm in range(1, 11):
             self.dm_list.append(DataManager(dm))
     
-    def read_operation(self, t_id, v_id):
+    def read_operation(self, t_id: int, v_id: int):
         """
         Add read operation to the operation list.
         
@@ -36,7 +36,7 @@ class TransactionManager:
         self.ts += 1
         self.operation_list.append(Operation('R', t_id, v_id, None))
     
-    def write_operation(self, t_id, v_id, val):
+    def write_operation(self, t_id: int, v_id: int, val: int):
         """
         Add write operation to the operation list.
         
@@ -53,7 +53,9 @@ class TransactionManager:
     
     def run_operation(self):
         """
-        Run operations in the operation list in order.
+        Run operations in the operation list in order. 
+        If the operation is read, read the variable from the transaction. 
+        If the operation is write, write the variable to the transaction.
         """
         for op in self.operation_list:
             if not op.t_id in self.transaction_table:
@@ -75,7 +77,7 @@ class TransactionManager:
                 if result:   
                     self.operation_list.remove(op)
     
-    def begin(self, t_id):
+    def begin(self, t_id: int):
         """
         Begin a new read-write transaction.
         
@@ -86,7 +88,7 @@ class TransactionManager:
         self.transaction_table[t_id] = Transaction(t_id, self.ts, is_ro=False)
         print("Transaction {} begins at time stamp {}".format(t_id, self.ts),'\n')
     
-    def beginRO(self, t_id):
+    def beginRO(self, t_id: int):
         """
         Begin a new read-only transaction.
         
@@ -97,7 +99,7 @@ class TransactionManager:
         self.transaction_table[t_id] = Transaction(t_id, self.ts, is_ro=True)
         print("Read-only transaction {} begins at time stamp {}".format(t_id, self.ts),'\n')
     
-    def read_snapshot(self, t_id, v_id):
+    def read_snapshot(self, t_id: int, v_id: int):
         """
         Read a variable from the snapshot of a read-only transaction.
         
@@ -123,7 +125,7 @@ class TransactionManager:
                     return True
         return False
           
-    def read(self, t_id, v_id):
+    def read(self, t_id: int, v_id: int):
         """
         Read a variable from a read-write transaction.
         
@@ -149,7 +151,7 @@ class TransactionManager:
                     return True
         return False
     
-    def write(self, t_id, v_id, val):
+    def write(self, t_id: int, v_id: int, val: int):
         """
         Write a variable from a read-write transaction. 
 
@@ -270,7 +272,7 @@ class TransactionManager:
 
 ###################################################################################################
 ######################################## TODO #####################################################
-##################################################################################################           
+###################################################################################################           
     def detect_deadlock(self):
         """Detect if there is a deadlock among existing transactions.
         """
@@ -296,7 +298,7 @@ class TransactionManager:
         return blocking_graph
 
 
-    def has_cycle(self, start, end, visited, blocking_graph) -> bool:
+    def has_cycle(self, start, end, visited, blocking_graph):
         """Use DFS to judge if there is a cycle in the blocking graph.
         Principle:
             For all the arcs that starts from a node, if this node's parent

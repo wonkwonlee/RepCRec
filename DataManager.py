@@ -4,9 +4,8 @@ Created on Friday, 2022-12-02
 Author: Wonkwon Lee, Young Il Kim
 
 """
-
-from LockManager import LockManager
 from Config import *
+from LockManager import LockManager
 from collections import defaultdict
 
 class DataManager:
@@ -182,9 +181,9 @@ class DataManager:
         """
         for k, v in self.lock_table.items():
             v.release_current_lock_by_transaction(t_id)
-            for ql in list(v.queue):
+            for ql in list(v.lock_queue):
                 if ql.t_id == t_id:
-                    v.queue.remove(ql)
+                    v.lock_queue.remove(ql)
         self.release_lock()                
                            
     def commit(self, t_id: int, ts: int):
@@ -197,7 +196,7 @@ class DataManager:
         """
         for k, v in self.lock_table.items():
             v.release_current_lock_by_transaction(t_id)
-            for ql in list(v.queue):
+            for ql in list(v.lock_queue):
                 # print("ql.t_id {}".format(ql.t_id))
                 # print("t_id {}".format(t_id))
                 if ql.t_id == t_id:
@@ -279,11 +278,11 @@ class DataManager:
 
         graph = defaultdict(set)
         for k, v in self.lock_table.items():
-            if not v.lock or not v.queue:
+            if not v.lock or not v.lock_queue:
                 continue
             # print("lock: {}".format(lm.lock))
-            # print("queue: {}".format(lm.queue))
-            for ql in v.queue:
+            # print("queue: {}".format(lm.lock_queue))
+            for ql in v.lock_queue:
                 if current_blocks_queued(v.lock, ql):
                     if v.lock.type == LockType.READ:
                         for t_id in v.lock.t_table:
@@ -293,10 +292,10 @@ class DataManager:
                         if v.lock.t_id != ql.t_id:
                             graph[ql.t_id].add(
                                 v.lock.t_id)
-            for i in range(len(v.queue)):
+            for i in range(len(v.lock_queue)):
                 for j in range(i):
-                    if queued_blocks_queued(v.queue[j], v.queue[i]):
-                        graph[v.queue[i].t_id].add(v.queue[j].t_id)
+                    if queued_blocks_queued(v.lock_queue[j], v.lock_queue[i]):
+                        graph[v.lock_queue[i].t_id].add(v.lock_queue[j].t_id)
         return graph
 
     def release_lock(self):
@@ -304,23 +303,23 @@ class DataManager:
         Check the lock table and move queued locks ahead if necessary.
         """
         for k, v in self.lock_table.items():
-            if v.queue:
+            if v.lock_queue:
                 if not v.lock:
                     # current lock is None
                     # pop the first queued lock and add to
-                    first_ql = v.queue.pop(0)
-                    if first_ql.type == LockType.READ:
-                        v.set_lock(RLock(first_ql.t_id, first_ql.v_id))
+                    lock = v.lock_queue.pop(0)
+                    if lock.type == LockType.READ:
+                        v.set_lock(RLock(lock.t_id, lock.v_id))
                     else:
-                        v.set_lock(WLock(first_ql.t_id, first_ql.v_id))
+                        v.set_lock(WLock(lock.t_id, lock.v_id))
                 if v.lock.type == LockType.READ:
                     # current lock is R-lock
                     # share R-lock with leading R-queued-locks
-                    for ql in list(v.queue):
+                    for ql in list(v.lock_queue):
                         if ql.type == LockType.WRITE:
                             if len(v.lock.t_table) == 1 and ql.t_id in v.lock.t_table:
                                 v.process_lock(WLock(ql.t_id, ql.v_id))
-                                v.queue.remove(ql)
+                                v.lock_queue.remove(ql)
                             break
                         v.share_lock(ql.t_id)
-                        v.queue.remove(ql)
+                        v.lock_queue.remove(ql)
