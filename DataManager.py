@@ -8,6 +8,9 @@ class DataManager:
     
     Args:
         site_id (int): Site ID
+        
+    Returns:
+        DataManager: A data manager object each site has.
     """
     def __init__(self, site_id: int):
         self.site_id = site_id      # Site ID
@@ -21,7 +24,7 @@ class DataManager:
         # Initialize data variables
         for i in range(1, 21):
             v_id = "x" + str(i)    # Variable ID: x1, x2, ..., x20
-            if i % 2 == 0:       # Even variables are replicated
+            if i % 2 == 0:                      # Even variables are replicated
                 self.data_table[v_id] = Variable(v_id, Commit(i*10,0), True)
                 self.lock_table[v_id] = LockManager2(v_id)
             elif i % 10 + 1 == self.site_id:    # Odd variables are not replicated
@@ -35,6 +38,9 @@ class DataManager:
         Args:
             v_id (int): Variable ID
             ts (int): Timestamp of the snapshot
+            
+        Returns:
+            Output: An output object containing the result of the read_snapshot operation.
         """
         var = self.data_table[v_id]
         
@@ -57,6 +63,9 @@ class DataManager:
         Args:
             t_id (int): Variable ID
             v_id (int): Variable ID
+            
+        Returns:
+            Output: An output object containing the result of the read operation.
         """
         var = self.data_table[v_id]
         if var.readable:
@@ -64,24 +73,24 @@ class DataManager:
             current_lock = lm.current_lock
             
             if current_lock:
-                if current_lock.lock_type == LockType.READ:
+                if current_lock.lock == LockType.READ:
                     if t_id in current_lock.transaction_id_set:
-                        return Output(True, var.val_list[0].val)
+                        return Output(True, var.val_list[-1].val)
                     if not lm.has_other_queued_write_lock():
                         lm.share_read_lock(t_id)
-                        return Output(True, var.val_list[0].val)
-                    lm.add_queue(QueuedLock(t_id, v_id, LockType.READ))
+                        return Output(True, var.val_list[-1].val)
+                    lm.add_queue(WaitingLock(t_id, v_id, LockType.READ))
                     return Output(False, None)
                 
-                elif current_lock.lock_type == LockType.WRITE:
+                elif current_lock.lock == LockType.WRITE:
                     if t_id == current_lock.t_id:
                         return Output(True, var.tempVal)
-                    lm.add_queue(QueuedLock(t_id, v_id, LockType.READ))
+                    lm.add_queue(WaitingLock(t_id, v_id, LockType.READ))
                     return Output(False, None)
             
 
-            lm.set_current_lock(ReadLock(t_id, v_id))
-            return Output(True, var.val_list[0].val)
+            lm.set_current_lock(RLock(t_id, v_id))
+            return Output(True, var.val_list[-1].val)
         return Output(False, None)
         
         
@@ -97,7 +106,6 @@ class DataManager:
         var = self.data_table[v_id]
         lm = self.lock_table[v_id]
         
-
         assert lm is not None and var is not None
         current_lock = lm.current_lock
         # print("================ DM :: def write() ================")
@@ -105,35 +113,26 @@ class DataManager:
         # print("var :: {}".format(var))
         # print("current_lock :: {}".format(current_lock))
         if current_lock:
-            # print("current_lock.lock_type :: {}".format(current_lock.lock_type))
-            if current_lock.lock_type == LockType.READ:
+            if current_lock.lock == LockType.READ:
                 if len(current_lock.transaction_id_set) != 1:
                     print("Write lock cannot be acquired. Need to wait.")
                     return
-                    # raise RuntimeError("Cannot promote to W-Lock: " "other transactions are holding R-lock!")
                 if t_id in current_lock.transaction_id_set:
                     if lm.has_other_queued_write_lock(t_id):
                         print("Write lock cannot be acquired. Need to wait.")
                         return
-                        # raise RuntimeError("Cannot promote to W-Lock: " "other W-lock is waiting in queue!")
                     lm.promote_current_lock(
-                        WriteLock(v_id, t_id))
+                        WLock(t_id, v_id))
                     var.temp_value = Temp(val, t_id)
                     return
                 print("Write lock cannot be acquired. Need to wait.")
                 return
-                # raise RuntimeError("Cannot promote to W-Lock: " "R-lock is not held by this transaction!")
-            # current lock is W-lock
             if t_id == current_lock.t_id:
-                # This transaction already holds a W-lock
                 var.temp_value = Temp(val, t_id)
                 return
-            # Another transaction is holding W-lock
             print("Write lock cannot be acquired. Need to wait.")
             return
-            # raise RuntimeError("Cannot get W-Lock: " "another transaction is holding W-lock!")
-        # No existing lock on the variable
-        lm.set_current_lock(WriteLock(v_id, t_id))
+        lm.set_current_lock(WLock(t_id, v_id))
         var.temp_value = Temp(val, t_id)
 
     def dump(self):
@@ -144,7 +143,7 @@ class DataManager:
         output = f"Site {self.site_id} - {status}"
 
         for k, v in self.data_table.items():
-            output += " {} : {}".format(k, v.val_list[0].val)
+            output += " {} : {}".format(k, v.val_list[-1].val)
         print(output)
         
     def fail(self, ts: int):
@@ -199,7 +198,7 @@ class DataManager:
         #print("((((((((((((((((((((((((((((((((((((((((")
         for k, v in self.data_table.items():
             if v.temp_value and v.temp_value.t_id == t_id:
-                v.add_commit_value(Commit(v.temp_value.val, ts))
+                v.update(Commit(v.temp_value.val, ts))
                 v.readable = True
                 # print("v.temp_value {}".format(v.temp_value.value))
                 # print("v's commits {}".format(v.commits[0].val))
@@ -230,11 +229,11 @@ class DataManager:
         lm: LockManager2 = self.lock_table[v_id]
         current_lock = lm.current_lock
         if current_lock:
-            if current_lock.lock_type == LockType.READ:
+            if current_lock.lock == LockType.READ:
                 if len(current_lock.transaction_id_set) != 1:
                     # Multiple transactions holding R-lock on the same variable
                     lm.add_queue(
-                        QueuedLock(v_id, t_id, LockType.WRITE))
+                        WaitingLock(v_id, t_id, LockType.WRITE))
                     return False
                 # Only one transaction holding an R-lock
                 # Which one?
@@ -243,12 +242,12 @@ class DataManager:
                     # Only this transaction holds the R-lock
                     # Can it be promoted to W-lock?
                     if lm.has_other_queued_write_lock(t_id):
-                        lm.add_queue(QueuedLock(v_id, t_id, LockType.WRITE))
+                        lm.add_queue(WaitingLock(v_id, t_id, LockType.WRITE))
                         return False
                     return True
                 # One other transaction is holding the R-lock
                 lm.add_queue(
-                    QueuedLock(v_id, t_id, LockType.WRITE))
+                    WaitingLock(v_id, t_id, LockType.WRITE))
                 return False
             # current lock is W-lock
             if t_id == current_lock.t_id:
@@ -256,7 +255,7 @@ class DataManager:
                 return True
             # Another transaction is holding W-lock
             lm.add_queue(
-                QueuedLock(v_id, t_id, LockType.WRITE))
+                WaitingLock(v_id, t_id, LockType.WRITE))
             return False
         # No existing lock on the variable
         return True
@@ -278,19 +277,19 @@ class DataManager:
                     # current lock is None
                     # pop the first queued lock and add to
                     first_ql = v.wait_lock.pop(0)
-                    if first_ql.lock_type == LockType.READ:
-                        v.set_current_lock(ReadLock(first_ql.v_id, first_ql.t_id))
+                    if first_ql.lock == LockType.READ:
+                        v.set_current_lock(RLock(first_ql.t_id, first_ql.v_id))
                     else:
-                        v.set_current_lock(WriteLock(first_ql.v_id, first_ql.t_id))
-                if v.current_lock.lock_type == LockType.READ:
+                        v.set_current_lock(WLock(first_ql.t_id, first_ql.v_id))
+                if v.current_lock.lock == LockType.READ:
                     # current lock is R-lock
                     # share R-lock with leading R-queued-locks
                     for ql in list(v.wait_lock):
-                        if ql.lock_type == LockType.WRITE:
+                        if ql.lock == LockType.WRITE:
                             if len(v.current_lock.transaction_id_set) == 1 \
                                     and ql.t_id in \
                                     v.current_lock.transaction_id_set:
-                                v.promote_current_lock(WriteLock(ql.v_id, ql.t_id))
+                                v.promote_current_lock(WLock(ql.t_id, ql.v_id))
                                 v.wait_lock.remove(ql)
                             break
                         v.share_read_lock(ql.t_id)
@@ -332,8 +331,8 @@ class DataManager:
             :param queued_lock: a queued Lock
             :return: boolean value to indicate if current blocks queued
             """
-            if current_lock.lock_type == LockType.READ:
-                if queued_lock.lock_type == LockType.READ or \
+            if current_lock.lock == LockType.READ:
+                if queued_lock.lock == LockType.READ or \
                         (len(current_lock.transaction_id_set) == 1 and queued_lock.t_id in current_lock.transaction_id_set):
                     return False
                 return True
@@ -347,8 +346,8 @@ class DataManager:
             :param queued_lock_right: another queued lock behind the first one
             :return: boolean value to indicate if queued blocks queued
             """
-            if queued_lock_left.lock_type == LockType.READ and \
-                    queued_lock_right.lock_type == LockType.READ:
+            if queued_lock_left.lock == LockType.READ and \
+                    queued_lock_right.lock == LockType.READ:
                 return False
             # at least one lock is W-lock
             return not queued_lock_left.t_id == queued_lock_right.t_id
@@ -361,7 +360,7 @@ class DataManager:
             # print("queue: {}".format(lm.wait_lock))
             for ql in v.wait_lock:
                 if current_blocks_queued(v.current_lock, ql):
-                    if v.current_lock.lock_type == LockType.READ:
+                    if v.current_lock.lock == LockType.READ:
                         for t_id in v.current_lock.transaction_id_set:
                             if t_id != ql.t_id:
                                 graph[ql.t_id].add(t_id)

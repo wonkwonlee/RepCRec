@@ -15,7 +15,7 @@ class LockManager2:
         """
         self.variable_id = variable_id
         self.current_lock = None
-        self.wait_lock = []  # list of QueuedLock
+        self.wait_lock = []
 
     def clear(self):
         """Clean up both current lock and lock queue."""
@@ -36,7 +36,7 @@ class LockManager2:
         """
         if not self.current_lock:
             raise RuntimeError("No current lock!")
-        if not self.current_lock.lock_type == LockType.READ:
+        if not self.current_lock.lock == LockType.READ:
             raise RuntimeError("Current lock is not R-lock!")
         if len(self.current_lock.transaction_id_set) != 1:
             raise RuntimeError("Other transaction sharing R-lock!")
@@ -51,21 +51,17 @@ class LockManager2:
         Share the R-lock with another transaction.
         :param transaction_id: the id of the transaction acquiring the R-lock
         """
-        if not self.current_lock.lock_type == LockType.READ:
+        if not self.current_lock.lock == LockType.READ:
             raise RuntimeError("Attempt to share W-lock!")
         self.current_lock.transaction_id_set.add(transaction_id)
 
-    def add_queue(self, new_lock: QueuedLock):
-        """
-        Add a new QueuedLock into lock queue.
-        :param new_lock: the new QueuedLock
-        """
+    def add_queue(self, new_lock: WaitingLock):
         for queued_lock in self.wait_lock:
             if queued_lock.t_id == new_lock.t_id:
                 # transaction holds the same type of lock or the new lock is
                 # a R-lock when already had locks in queue
-                if queued_lock.lock_type == new_lock.lock_type or \
-                        new_lock.lock_type == LockType.READ:
+                if queued_lock.lock == new_lock.lock or \
+                        new_lock.lock == LockType.READ:
                     return
         self.wait_lock.append(new_lock)
 
@@ -77,7 +73,7 @@ class LockManager2:
         :return: boolean value to indicate if existing queued W-lock
         """
         for queued_lock in self.wait_lock:
-            if queued_lock.lock_type == LockType.WRITE:
+            if queued_lock.lock == LockType.WRITE:
                 if t_id and queued_lock.t_id == t_id:
                     continue
                 return True
@@ -90,9 +86,8 @@ class LockManager2:
         """
         if self.current_lock:
             # print("=========================== LM :: RCLBT ===========================")
-            if self.current_lock.lock_type == LockType.READ:
-                # print("if self.current_lock.lock_type == LockType.READ:")
-                # current lock is R-lock
+            if self.current_lock.lock == LockType.READ:
+                # print("if self.current_lock.lock == LockType.READ:")
                 if transaction_id in self.current_lock.transaction_id_set:
                     # print("if transaction_id in self.current_lock.transaction_id_set:")
                     self.current_lock.transaction_id_set.remove(transaction_id)
@@ -100,10 +95,8 @@ class LockManager2:
                 # print(len(self.current_lock.transaction_id_set))
                 if not len(self.current_lock.transaction_id_set):
                     # print("if not len(self.current_lock.transaction_id_set):")
-                    # release when no other transaction holding R-lock
                     self.current_lock = None
             else:
-                # print("if self.current_lock.lock_type == LockType.WRITE:")
-                # current lock is W-lock
+                # print("if self.current_lock.lock == LockType.WRITE:")
                 if self.current_lock.t_id == transaction_id:
                     self.current_lock = None

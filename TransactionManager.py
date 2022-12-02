@@ -77,7 +77,7 @@ class TransactionManager:
     
     def begin(self, t_id):
         """
-        Begin a new transaction.
+        Begin a new read-write transaction.
         
         Args:
             t_id (int): Transaction id
@@ -115,7 +115,7 @@ class TransactionManager:
                 result = dm.read_snapshot(v_id, self.ts)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
-                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].val_list[0].val, dm.site_id, self.ts),'\n')
+                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].val_list[-1].val, dm.site_id, self.ts),'\n')
                     return True
         return False
             
@@ -138,7 +138,7 @@ class TransactionManager:
                 result = dm.read(t_id, v_id)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
-                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].val_list[0].val, dm.site_id, self.ts),'\n')
+                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].val_list[-1].val, dm.site_id, self.ts),'\n')
                     return True
         return False
         

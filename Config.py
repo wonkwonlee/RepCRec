@@ -112,94 +112,70 @@ class Temp(object):
         self.val = val
         self.t_id = t_id
 
-class ReadLock:
-    """Represents a current Read lock."""
-
-    def __init__(self, v_id: int, t_id: int):
-        """
-        Initialize a ReadLock instance.
-        :param variable_id: variable's id for the R-lock
-        :param transaction_id: transaction's id for the R-lock
-        """
-        self.v_id = v_id
-        # multiple transactions could share a R-lock
+class RLock(object):
+    """
+    Read lock is a shared lock, so multiple transactions can share the same read lock.
+    
+    Args:
+        t_id (int): Transaction ID
+        v_id (int): Variable ID
+    """
+    def __init__(self, t_id: int, v_id: int):
+        """Constructor to initialize a read lock object."""
         self.transaction_id_set = {t_id}
-        self.lock_type = LockType.READ
-
-    def __repr__(self):
-        """Custom print for debugging purpose."""
-        return "({}, {}, {})".format(
-            self.transaction_id_set, self.v_id, self.lock_type)
-
-
-class WriteLock:
-    """Represents a current Write lock."""
-
-    def __init__(self, v_id: int, t_id: int):
-        """
-        Initialize a WriteLock instance.
-        :param variable_id: variable's id for the W-lock
-        :param transaction_id: transaction's id for the W-lock
-        """
         self.v_id = v_id
+        self.lock = LockType.READ
+
+class WLock:
+    """
+    Write lock is an exclusive lock, so only one transaction can hold the write lock.
+    
+    Args:
+        t_id (int): Transaction ID
+        v_id (int): Variable ID
+    """
+
+    def __init__(self, t_id: int, v_id: int):
+        """Constructor to initialize a write lock object."""
         self.t_id = t_id
-        self.lock_type = LockType.WRITE
-
-    # def __repr__(self):
-    #     """Custom print for debugging purpose."""
-    #     return "({}, {}, {})".format(self.t_id, self.v_id, self.lock_type)
-
-
-class QueuedLock:
-    """Represents a lock in queue."""
-
-    def __init__(self, v_id: int, t_id: int, lock_type: LockType):
-        """
-        Initialize a QueuedLock instance.
-        :param variable_id: variable's id for the queued lock
-        :param transaction_id: transaction's id for the queued lock
-        :param lock_type: either R or W type
-        """
         self.v_id = v_id
+        self.lock = LockType.WRITE
+
+class WaitingLock:
+    """
+    Waiting lock is a lock that is waiting to be granted.
+    
+    Args:
+        t_id (int): Transaction ID
+        v_id (int): Variable ID
+        lock (LockType): Lock type (READ/WRITE)
+    """
+    def __init__(self, t_id: int, v_id: int, lock: LockType):
+        """Constructor to initialize a waiting lock object."""
         self.t_id = t_id
-        self.lock_type = lock_type  # Q-lock could be either read or write
-
-    def __repr__(self):
-        """Custom print for debugging purpose."""
-        return "({}, {}, {})".format(self.t_id, self.v_id, self.lock_type)
-
-class Lock:
-    def __init__(self, tid: str, vid: str, lock_type: LockType) -> None:
-        self.tid = tid  # transaction id
-        self.vid = vid  # variable id
-        self.lock_type = lock_type  # either R or W
+        self.v_id = v_id
+        self.lock = lock 
         
 class Variable(object):
+    """
+    Variable object that stores the variable id, list of committed values, and flags to indicate readable and replicated
+    """
+    
     def __init__(self, v_id: int, init_val, replicated: bool):
+        """Constructor to initialize a variable object."""
         self.v_id = v_id                # Variable ID
         self.val_list = [init_val]      # List of stored committed values
         self.readable = True            # Flag to indicate whether the variable is readable
         self.replicated = replicated    # Flag to indicate whether the variable is replicated 
-        self.fail = False               # Flag to indicate whether the variable is failed
+        # self.fail = False               # Flag to indicate whether the variable is failed
         self.temp_value = None          # Temporary value written by a transaction holding W-lock
 
-    # def get_last_committed_value(self):
+    # def add_commit_value(self, commit_value):
     #     """
-    #     :return: the latest committed value
+    #     Insert a CommitValue object to the front of the committed value list.
+    #     :param commit_value: a CommitValue object
     #     """
-    #     return self.commits[0].val
-
-    # def get_temp_value(self):
-    #     """
-    #     :return: the temporary value written by a transaction holding a W-lock
-    #     """
-    #     if not self.temp_value:
-    #         raise RuntimeError("No temp value!")
-    #     return self.temp_value.val
-
-    def add_commit_value(self, commit_value):
-        """
-        Insert a CommitValue object to the front of the committed value list.
-        :param commit_value: a CommitValue object
-        """
-        self.val_list.insert(0, commit_value)
+    #     self.val_list.insert(0, commit_value)
+        
+    def update(self, val):
+        self.val_list.append(val)
