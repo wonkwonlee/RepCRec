@@ -1,3 +1,10 @@
+"""
+Created on Friday, 2022-12-02
+
+Author: Wonkwon Lee, Young Il Kim
+
+"""
+
 import sys
 import TransactionManager
 

@@ -1,3 +1,10 @@
+"""
+Created on Friday, 2022-12-02
+
+Author: Wonkwon Lee, Young Il Kim
+
+"""
+
 from enum import Enum
 
 class Transaction:
@@ -88,15 +95,15 @@ class Commit(object):
 
 class Output(object):
     """
-    Output object that stores the success flag and value of the operation.
+    Output object that stores flag to indicate operation succeed and value of the operation.
     
     Args:
-        success (bool): Flag to indicate whether the operation was successful
+        succeed (bool): Flag to indicate whether the operation was successful
         val (int): Value of the operation (if write operation)
     """
-    def __init__(self, success, val=None):
+    def __init__(self, succeed, val=None):
         """Constructor to initialize an output object."""
-        self.success = success
+        self.succeed = succeed
         self.val = val
 
 class Temp(object):
@@ -124,7 +131,7 @@ class RLock(object):
         """Constructor to initialize a read lock object."""
         self.transaction_id_set = {t_id}
         self.v_id = v_id
-        self.lock = LockType.READ
+        self.lock_type = LockType.READ
 
 class WLock:
     """
@@ -139,9 +146,9 @@ class WLock:
         """Constructor to initialize a write lock object."""
         self.t_id = t_id
         self.v_id = v_id
-        self.lock = LockType.WRITE
+        self.lock_type = LockType.WRITE
 
-class WaitingLock:
+class QLock:
     """
     Waiting lock is a lock that is waiting to be granted.
     
@@ -150,32 +157,36 @@ class WaitingLock:
         v_id (int): Variable ID
         lock (LockType): Lock type (READ/WRITE)
     """
-    def __init__(self, t_id: int, v_id: int, lock: LockType):
+    def __init__(self, t_id: int, v_id: int, lock_type: LockType):
         """Constructor to initialize a waiting lock object."""
         self.t_id = t_id
         self.v_id = v_id
-        self.lock = lock 
+        self.lock_type = lock_type 
+        
         
 class Variable(object):
     """
     Variable object that stores the variable id, list of committed values, and flags to indicate readable and replicated
-    """
     
-    def __init__(self, v_id: int, init_val, replicated: bool):
+    Args:
+        v_id (int): Variable ID
+        val (int): Initial value of the variable
+        replicated (bool): Flag to indicate whether the variable is replicated
+    """
+    def __init__(self, v_id: int, val: int, replicated: bool):
         """Constructor to initialize a variable object."""
         self.v_id = v_id                # Variable ID
-        self.val_list = [init_val]      # List of stored committed values
+        self.val_list = [val]           # List of stored committed values
         self.readable = True            # Flag to indicate whether the variable is readable
         self.replicated = replicated    # Flag to indicate whether the variable is replicated 
         self.fail = False               # Flag to indicate whether the variable is failed
         self.temp_value = None          # Temporary value written by a transaction holding W-lock
-
-    # def add_commit_value(self, commit_value):
-    #     """
-    #     Insert a CommitValue object to the front of the committed value list.
-    #     :param commit_value: a CommitValue object
-    #     """
-    #     self.val_list.insert(0, commit_value)
         
     def update(self, val):
+        """
+        Update the variable with a new committed value.
+        
+        Args:
+            val (int): New committed value
+        """
         self.val_list.insert(0, val)

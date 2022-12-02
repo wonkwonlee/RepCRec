@@ -1,3 +1,10 @@
+"""
+Created on Friday, 2022-12-02
+
+Author: Wonkwon Lee, Young Il Kim
+
+"""
+
 from DataManager import DataManager
 import LockManager2
 from Config import *
@@ -292,72 +299,6 @@ class TransactionManager:
             print("Deadlock detected: aborting {}".format(youngest_t_id))
             self.abort(youngest_t_id)
             return True
-        return False
-
-    def detect_deadlock(self):
-        block_graph = dict(set)
-        
-        for dm in self.dm_list:
-            if dm.is_running:
-                g = dm.initialize_block_graph(self.dm_list)
-            
-                for k, v in g.items():
-                    block_graph[k] = v
-        
-        new_t_id = None
-        new_ts = None
-        
-        for k in list(block_graph.keys()):
-            visited = set()
-            if self.detect_cycle(k, k, block_graph, visited):
-                if self.transaction_table[k].ts > new_ts:
-                    new_t_id = k
-                    new_ts = self.transaction_table[k].ts
-        
-        if new_t_id:
-            print("Deadlock detected, aborting transaction {}".format(new_t_id),'\n')
-            self.abort(new_t_id)
-            return True
-        return False
-    
-    def solve_deadlock(self):
-        """
-        Detect deadlocks using cycle detection and abort the youngest
-        transaction in the cycle.
-        :return: True if a deadlock is resolved, False if no deadlock detected
-        """
-        blocking_graph = defaultdict(set)
-        for dm in self.dm_list:
-            #if dm.is_running and v_id in dm.data_table:
-            if dm.is_running:
-                graph = dm.generate_blocking_graph()
-                for node, adj_list in graph.items():
-                    blocking_graph[node].update(adj_list)
-        # print(dict(blocking_graph))
-        youngest_t_id = None
-        youngest_ts = -1
-        for node in list(blocking_graph.keys()):
-            visited = set()
-            if has_cycle(node, node, visited, blocking_graph):
-                if self.transaction_table[node].ts > youngest_ts:
-                    youngest_t_id = node
-                    youngest_ts = self.transaction_table[node].ts
-        if youngest_t_id:
-            print("Deadlock detected: aborting {}".format(youngest_t_id))
-            self.abort(youngest_t_id)
-            return True
-        return False
-
-
-    def has_cycle(current, root, visited, blocking_graph):
-        """Helper function that detects cycle in blocking graph using dfs."""
-        visited.add(current)
-        for neighbour in blocking_graph[current]:
-            if neighbour == root:
-                return True
-            if neighbour not in visited:
-                if has_cycle(neighbour, root, visited, blocking_graph):
-                    return True
         return False
 
             
