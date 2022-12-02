@@ -1,45 +1,91 @@
+"""
+Created on Friday, 2022-12-02
+
+Author: Wonkwon Lee, Young Il Kim
+
+"""
 from enum import Enum
 
+class Transaction(object):
+    """
+    Transaction object that stores the transaction id, timestamp, and a flag to indicate read-only.
 
-class SiteStatus(Enum):
-    UP = 1
-    DOWN = 2
+    Args:
+        id (str): Transaction ID
+        ts (int): Timestamp of when the transaction began
+        is_ro (bool): Whether the transaction is read-only
+    """
+    def __init__(self, id: str, ts: int, is_ro: bool):
+        """
+        Constructor to initialize a transaction object.
+        """
+        self.id = id                # Transaction ID
+        self.ts = ts                # Timestamp of when the transaction began
+        self.is_ro = is_ro          # Flag to indicate whether the transaction is read-only
+        self.is_aborted = False     # will abort if deadlock
+        self.visited_sites = []     # sites visited by this transaction
+        
+class Operation(object):
+    """
+    Operation object that stores the operation type, transaction id, variable id, and value.
 
+    Args:
+        op (str): Operation type (R/W)
+        t_id (str): Transaction ID
+        v_id (int): Variable ID
+        val (int): Value to write (if write operation)
+    """
+    def __init__(self, op: str, t_id: str, v_id: int, val: int=None):
+        """
+        Constructor to initialize an operation object.
+        """
+        self.op = op                # Operation type (R/W) 
+        self.t_id = t_id            # Transaction ID
+        self.v_id = v_id            # Variable ID
+        self.val = val              # Value to write (if write operation)
+
+class LockType(Enum):
+    """
+    Enum for lock type.
+    """
+    READ = 1
+    WRITE = 2
 
 class TransactionType(Enum):
+    """
+    Enum for transaction type.
+    """
     RO = 1
     RW = 2
 
-
 class TransactionStatus(Enum):
+    """
+    Enum for transaction status.
+    """
     ACTIVE = 1
     BLOCKED = 2
     COMMITED = 3
     ABORTED = 4
 
-
-class LockType(Enum):
-    READ = 1
-    WRITE = 2
-
-
-class NumType(Enum):
-    EVEN = 0
-    ODD = 1
-
-
 class DataType(Enum):
+    """
+    Enum for replicated data type.
+    """
     REPLICATED = 0
     NONREPLICATED = 1
 
-
 class AbortType(Enum):
+    """
+    Enum for abort type.
+    """
     DEADLOCK = 1
     SITE_FAILURE = 2
     NO_DATA_FOR_READ_ONLY = 3
 
-
 class OperationType(Enum):
+    """
+    Enum for operation type.
+    """
     BEGIN = 1
     BEGINRO = 2
     WRITE = 3
@@ -49,96 +95,125 @@ class OperationType(Enum):
     DUMP = 7
     END = 8
 
-class CommitValue:
-    """Represents a committed value of a variable."""
+class Commit(object):
+    """
+    Commit object that stores the value and timestamp of the commit operation.
+    
+    Args:
+        val (int): Value to commit
+        ts (int): Timestamp of when the commit operation was executed
+    """
+    def __init__(self, val, ts):
+        """
+        Constructor to initialize a commit object.
+        """
+        self.val = val
+        self.ts = ts
 
-    def __init__(self, value, ts):
+class Output(object):
+    """
+    Output object that stores flag to indicate operation succeed and value of the operation.
+    
+    Args:
+        succeed (bool): Flag to indicate whether the operation was successful
+        val (int): Value of the operation (if write operation)
+    """
+    def __init__(self, succeed, val=None):
         """
-        Initialize a CommitValue instance.
-        :param value: the committed value
-        :param commit_ts: the timestamp of the commit
+        Constructor to initialize an output object.
         """
-        self.value = value
-        self.cm_ts = ts
+        self.succeed = succeed
+        self.val = val
 
-class Result:
-    """Helper class that stores the result of a read or write action."""
-
-    def __init__(self, success, value=None):
+class Temp(object):
+    """
+    Temp object that stores the temporary value and transaction id of the write operation.
+    
+    Args:
+        val (int): Temporary value written by a transaction holding the write lock
+        t_id (str): Transaction ID of the transaction holding the write lock
+    """
+    def __init__(self, val, t_id):
         """
-        Initialize a Result instance.
-        :param success: indicate if the result is successful or not
-        :param value: result's value (optional)
+        Constructor to initialize a temp object.
         """
-        self.success = success
-        self.value = value
-
-class TempValue:
-    """Saves the temporary written value before the transaction commits."""
-
-    def __init__(self, value, t_id):
-        """
-        Initialize a TempValue instance.
-        :param value: temporary value written by a transaction holding W-lock
-        :param transaction_id: the id of the transaction holding W-lock
-        """
-        self.value = value
+        self.val = val
         self.t_id = t_id
 
-class ReadLock:
-    """Represents a current Read lock."""
-
-    def __init__(self, variable_id, transaction_id):
+class RLock(object):
+    """
+    Read lock is a shared lock, so multiple transactions can share the same read lock.
+    
+    Args:
+        t_id (int): Transaction ID
+        v_id (int): Variable ID
+    """
+    def __init__(self, t_id: int, v_id: int):
         """
-        Initialize a ReadLock instance.
-        :param variable_id: variable's id for the R-lock
-        :param transaction_id: transaction's id for the R-lock
+        Constructor to initialize a read lock object.
         """
-        self.variable_id = variable_id
-        # multiple transactions could share a R-lock
-        self.transaction_id_set = {transaction_id}
-        self.lock_type = LockType.R
+        self.t_table = {t_id}
+        self.v_id = v_id
+        self.type = LockType.READ
 
-    def __repr__(self):
-        """Custom print for debugging purpose."""
-        return "({}, {}, {})".format(
-            self.transaction_id_set, self.variable_id, self.lock_type)
-
-
-class WriteLock:
-    """Represents a current Write lock."""
-
-    def __init__(self, variable_id, transaction_id):
+class WLock(object):
+    """
+    Write lock is an exclusive lock, so only one transaction can hold the write lock.
+    
+    Args:
+        t_id (int): Transaction ID
+        v_id (int): Variable ID
+    """
+    def __init__(self, t_id: int, v_id: int):
         """
-        Initialize a WriteLock instance.
-        :param variable_id: variable's id for the W-lock
-        :param transaction_id: transaction's id for the W-lock
+        Constructor to initialize a write lock object.
         """
-        self.variable_id = variable_id
-        self.transaction_id = transaction_id
-        self.lock_type = LockType.W
+        self.t_id = t_id
+        self.v_id = v_id
+        self.type = LockType.WRITE
 
-    def __repr__(self):
-        """Custom print for debugging purpose."""
-        return "({}, {}, {})".format(
-            self.transaction_id, self.variable_id, self.lock_type)
-
-
-class QueuedLock:
-    """Represents a lock in queue."""
-
-    def __init__(self, variable_id, transaction_id, lock_type: LockType):
+class QLock(object):
+    """
+    Queue lock stores the transaction waiting for the lock.
+    
+    Args:
+        t_id (int): Transaction ID
+        v_id (int): Variable ID
+        lock_type (LockType): Lock type (READ/WRITE)
+    """
+    def __init__(self, t_id: int, v_id: int, lock_type: LockType):
         """
-        Initialize a QueuedLock instance.
-        :param variable_id: variable's id for the queued lock
-        :param transaction_id: transaction's id for the queued lock
-        :param lock_type: either R or W type
+        Constructor to initialize a lock queue object.
         """
-        self.variable_id = variable_id
-        self.transaction_id = transaction_id
-        self.lock_type = lock_type  # Q-lock could be either read or write
-
-    def __repr__(self):
-        """Custom print for debugging purpose."""
-        return "({}, {}, {})".format(
-            self.transaction_id, self.variable_id, self.lock_type)
+        self.t_id = t_id
+        self.v_id = v_id
+        self.type = lock_type 
+        
+class Variable(object):
+    """
+    Variable object that stores the variable id, list of committed values, and flags to indicate readable and replicated
+    
+    Args:
+        v_id (int): Variable ID
+        val (int): Initial value of the variable
+        replicated (bool): Flag to indicate whether the variable is replicated
+    """
+    def __init__(self, v_id: int, val: int, replicated: bool):
+        """
+        Constructor to initialize a variable object.
+        """
+        self.v_id = v_id                # Variable ID
+        self.val_list = [val]           # List of stored committed values
+        self.readable = True            # Flag to indicate whether the variable is readable
+        self.replicated = replicated    # Flag to indicate whether the variable is replicated 
+        self.fail = False               # Flag to indicate whether the variable is failed
+        self.temp = None          # Temporary value written by a transaction holding W-lock
+        
+    def update(self, val):
+        """
+        Update the variable with a new committed value.
+        
+        Args:
+            val (int): New committed value
+        """
+        self.val_list.insert(0, val)

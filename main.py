@@ -1,14 +1,22 @@
-import sys
-import os
+"""
+Created on Friday, 2022-12-02
 
+Author: Young Il Kim
+
+"""
+
+import sys
 import TransactionManager
-import SiteManager
-import DataManager
 
 ts = 0
 
 if __name__ == '__main__':
-
+    """
+    Main function to run the program.
+    Read the input file from the command line and process each operation.
+        : check number of inputs
+        : check if the file exists
+    """
     if len(sys.argv) != 2:
         print('INCORRECT INPUT')
         sys.exit(1)
@@ -24,15 +32,14 @@ if __name__ == '__main__':
     # print()
 
     tm = TransactionManager.TransactionManager()
-    sm = SiteManager.SiteManager()
-    
-    deadlock_detected = False
-
     if fileName :
         #print("INPUT :: {}".format(inputSource))
         try:
             #print("OPEN SUCCESSFULLY :: {}".format(inputSource))
-
+            """
+            Start Parsing and look for operation : begin, beginRO, W, R, fail, recover, end, dump
+            Look for a deadlock before operation. 
+            """
             for line in inputSource:
                 if line == "":
                     continue
@@ -59,7 +66,10 @@ if __name__ == '__main__':
                 # print("args :: {}".format(args))
 
                 ts += 1
-
+                
+                if tm.detect_deadlock():
+                     print("DEADLOCK DETECTED!")
+                     tm.run_operation()
 
                 if method == "begin":
                     p1 = temp[1]
@@ -78,7 +88,6 @@ if __name__ == '__main__':
                     p3 = args[2]
                     print(method, p1, p2, p3)
                     tm.write_operation(p1, p2, p3)
-
 
                 elif method == "R":
                     args = temp[1].split(',')
@@ -107,13 +116,10 @@ if __name__ == '__main__':
                     tm.dump()
                     
                 else :
-                    print("Unrecognized Command. Abort The Program")
+                    print("Unrecognized command. Abort the program")
                     break
 
-                if not deadlock_detected:
-                    tm.run_operation()
-
+                tm.run_operation()
 
         except IOError:
             print("CAN'T OPEN FILE {}".format(inputSource))
-
