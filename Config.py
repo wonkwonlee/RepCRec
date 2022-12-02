@@ -1,5 +1,5 @@
 """
-Created on Friday, 2022-12-02
+Due on Saturday, 12/03/2022
 
 Author: Wonkwon Lee, Young Il Kim
 
@@ -63,16 +63,7 @@ class Variable(object):
         self.replicated = replicated    # Flag to indicate whether the variable is replicated 
         self.fail = False               # Flag to indicate whether the variable is failed
         self.temp = None          # Temporary value written by a transaction holding W-lock
-        
-    def update(self, val):
-        """
-        Update the variable with a new committed value.
-        
-        Args:
-            val (int): New committed value
-        """
-        self.val_list.insert(0, val)
-
+    
 class LockType(Enum):
     """
     Enum for lock type.

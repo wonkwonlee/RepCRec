@@ -1,5 +1,5 @@
 """
-Created on Friday, 2022-12-02
+Due on Saturday, 12/03/2022
 
 Author: Wonkwon Lee, Young Il Kim
 
@@ -207,7 +207,7 @@ class DataManager(object):
                     continue
         for k, v in self.data_table.items():
             if v.temp and v.temp.t_id == t_id:
-                v.update(Commit(v.temp.val, ts))
+                v.val_list.insert(0, Commit(v.temp.val, ts))
                 v.readable = True
                 # print("v.temp {}".format(v.temp.value))
                 # print("v's commits {}".format(v.commits[0].val))
@@ -244,63 +244,47 @@ class DataManager(object):
             return False
         return True
     
-    
-
-###################################################################################################
-######################################## TODO #####################################################
-###################################################################################################
-    def initialize_block_graph(self):
+    def init_block_graph(self):
         """
-        Generate the blocking graph for this site
-        :return: blocking graph
+        Initialize the block graph for the site.
+        
+
+        Returns:
+            graph (dict): Blocking graph
         """
-        def current_blocks_queued(lock, queued_lock):
-            """
-            Check if the current lock is blocking a queued lock.
-            :param lock: current lock
-            :param queued_lock: a queued Lock
-            :return: boolean value to indicate if current blocks queued
-            """
-            if lock.type == LockType.READ:
-                if queued_lock.type == LockType.READ or (len(lock.t_table) == 1 and queued_lock.t_id in lock.t_table):
-                    return False
-                return True
-            # current lock is W-lock
-            return not lock.t_id == queued_lock.t_id
-
-        def queued_blocks_queued(queued_lock_left, queued_lock_right):
-            """
-            Check if a queued lock is blocking another queued lock behind it.
-            :param queued_lock_left: a queued lock
-            :param queued_lock_right: another queued lock behind the first one
-            :return: boolean value to indicate if queued blocks queued
-            """
-            if queued_lock_left.type == LockType.READ and queued_lock_right.type == LockType.READ:
-                return False
-            # at least one lock is W-lock
-            return not queued_lock_left.t_id == queued_lock_right.t_id
-
         graph = defaultdict(set)
         for k, v in self.lock_table.items():
             if not v.lock or not v.lock_queue:
                 continue
-            # print("lock: {}".format(lm.lock))
-            # print("queue: {}".format(lm.lock_queue))
-            for ql in v.lock_queue:
-                if current_blocks_queued(v.lock, ql):
+            for l in v.lock_queue:
+                if self.check_qlock(v.lock, l):
                     if v.lock.type == LockType.READ:
-                        for t_id in v.lock.t_table:
-                            if t_id != ql.t_id:
-                                graph[ql.t_id].add(t_id)
+                        for t in v.lock.t_table:
+                            if t != l.t_id:
+                                graph[l.t_id].add(l.t_id)
                     else:
-                        if v.lock.t_id != ql.t_id:
-                            graph[ql.t_id].add(
-                                v.lock.t_id)
+                        if v.lock.t_id != l.t_id:
+                            graph[l.t_id].add(v.lock.t_id)
+                        
             for i in range(len(v.lock_queue)):
                 for j in range(i):
-                    if queued_blocks_queued(v.lock_queue[j], v.lock_queue[i]):
+                    if self.check_queue(v.lock_queue[j], v.lock_queue[i]):
                         graph[v.lock_queue[i].t_id].add(v.lock_queue[j].t_id)
         return graph
+        
+    def check_qlock(self, lock, qlock):
+        if lock.type == LockType.READ:
+            if qlock.type == LockType.READ or len(lock.t_table) == 1:
+                if qlock.t_id in lock.t_table:
+                    return False
+            return True
+        return not lock.t_id == qlock.t_id
+
+    def check_queue(self, head, tail):
+        if head.type == LockType.READ and tail.type == LockType.READ:
+            return False
+        return not head.t_id == tail.t_id
+
 
     def release_lock(self):
         """

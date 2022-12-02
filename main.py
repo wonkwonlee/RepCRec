@@ -1,8 +1,7 @@
 """
-Created on Friday, 2022-12-02
+Due on Saturday, 12/03/2022
 
-Author: Young Il Kim
-
+Author: Wonkwon Lee, Young Il Kim
 """
 
 import sys
@@ -52,8 +51,8 @@ if __name__ == '__main__':
 
                 ts += 1
                 
-                if tm.detect_deadlock():
-                     print("DEADLOCK DETECTED!")
+                if tm.check_deadlock():
+                    #  print("DEADLOCK DETECTED!")
                      tm.run_operation()
 
                 if method == "begin":
