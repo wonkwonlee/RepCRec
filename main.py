@@ -14,8 +14,7 @@ if __name__ == '__main__':
     """
     Main function to run the program.
     Read the input file from the command line and process each operation.
-        : check number of inputs
-        : check if the file exists
+    Main function checks number of inputs and check if the input file exists.
     """
     if len(sys.argv) != 2:
         print('INCORRECT INPUT')
@@ -32,7 +31,7 @@ if __name__ == '__main__':
     # print()
 
     tm = TransactionManager.TransactionManager()
-    if fileName :
+    if fileName:
         #print("INPUT :: {}".format(inputSource))
         try:
             #print("OPEN SUCCESSFULLY :: {}".format(inputSource))
@@ -45,11 +44,11 @@ if __name__ == '__main__':
                     continue
                 
                 newLine = line.split('//')[0].strip()
-                if len(newLine) == 0 :
+                if len(newLine) == 0:
                     continue
-                elif newLine.startswith('quit') :
+                elif newLine.startswith('quit'):
                     break
-                elif newLine.startswith('===') :
+                elif newLine.startswith('==='):
                     break
                 
                 temp = newLine.strip().strip(')')
@@ -115,7 +114,7 @@ if __name__ == '__main__':
                     print(method)
                     tm.dump()
                     
-                else :
+                else:
                     print("Unrecognized command. Abort the program")
                     break
 

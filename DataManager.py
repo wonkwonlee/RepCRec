@@ -19,7 +19,7 @@ class DataManager(object):
     Returns:
         DataManager: A data manager object one for each site. Even variables are replicated at all sites and odd variables are not replicated.
     """
-    def __init__(self, site_id: int):
+    def __init__(self, site_id: str):
         self.site_id = site_id      # Site ID
         self.is_running = True      # Flag to indicate if the site is running
         self.data_table = {}        # Dictionary of variables stored at this site
