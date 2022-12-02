@@ -1,5 +1,5 @@
 """
-Created on Friday, 2022-12-02
+Due on Saturday, 12/03/2022
 
 Author: Wonkwon Lee, Young Il Kim
 
@@ -10,7 +10,8 @@ from collections import defaultdict
 
 class TransactionManager(object):
     """
-    Initialize a transaction manager class. Each transaction manager has a list of data managers, transaction table, and operation list.
+    Transaction manager is responsible for managing transactions.
+    Each transaction manager has a list of data managers, transaction table, and operation list.
     Data manager list is initialized with 10 data managers.
     """
     transaction_table = {}  # Transaction table
@@ -18,7 +19,10 @@ class TransactionManager(object):
     ts = 0                  # Time stamp
     
     def __init__(self):
-        self.dm_list = []   # List of data managers
+        """
+        Initialize the transaction manager with 10 data managers.
+        """    
+        self.dm_list = []
         for dm in range(1, 11):
             self.dm_list.append(DataManager(dm))
     
@@ -168,8 +172,8 @@ class TransactionManager(object):
             print("Transaction {} aborts".format(t_id), '\n')
             return False
         
-        for dm in [site for site in self.dm_list if site.is_running and site.contains(v_id)]:   
-            # Check if site is running and variable is in the site
+        for dm in [site for site in self.dm_list if site.is_running and site.data_table.get(v_id)]:   
+            # Check if site is running and variable is in the data table
             wlock = dm.acquire_wlock(t_id, v_id)
             if not wlock:
                 print("Write lock conflict found. Transaction {} is waiting.".format(t_id), '\n')
@@ -201,6 +205,7 @@ class TransactionManager(object):
         Arg:
             t_id (int): Transaction id
         """
+        self.ts += 1
         if not t_id in self.transaction_table:
             print("Transaction table does not contains {}".format(t_id),'\n')
             return
@@ -268,105 +273,80 @@ class TransactionManager(object):
             if not v.is_ro and not v.is_aborted and site_id in v.visited_sites:
                 v.is_aborted = True
                 return
+        
+    def init_graph(self, dm_list: list[DataManager]):
+        """
+        Initialize a blocking graph for deadlock detection.
+
+        Args:
+            dm_list (list[DataManager]): List of data managers
+
+        Returns:
+            graph (dict): Blocking graph
+        """
+        graph = defaultdict(set)
+        for dm in [x for x in dm_list if x.is_running]:
+            g = dm.init_block_graph()
+            for k, v in g.items():
+                graph[k].update(v)
+        return graph 
+
+    def is_cyclic(self, src: int, dest: int, visited: defaultdict, graph: defaultdict):
+        """
+        Check if there is a cycle in the blocking graph using DFS algorithm.
     
+        Args:
+            src (int): Source node transaction ID
+            dest (int): Destination node transaction ID
+            visited (defaultdict): Visited nodes
+            graph (defaultdict): Blocking graph
 
-###################################################################################################
-######################################## TODO #####################################################
-###################################################################################################           
-    def detect_deadlock(self):
-        """Detect if there is a deadlock among existing transactions.
+        Returns:
+            bool: True if there is a cycle, False otherwise
         """
-        blocking_graph = self.get_block_graph(self.dm_list)
-        victim = self.detect(self.transaction_table, blocking_graph)
-        if victim is not None:
-            print("Found deadlock, aborts the youngest transaction {}".format(victim))
-            self.abort(victim)
-            return True
-        return False
-
-
-    def get_block_graph(self, sites):
-        """
-        Collect blocking information from all up sites, and generate
-        a complete blocking graph for all the existing transactions.
-        """
-        blocking_graph = defaultdict(set)
-        for site in [x for x in sites if x.is_running]:
-            graph = site.initialize_block_graph()
-            for tid, adjacent_tid_set in graph.items():
-                blocking_graph[tid].update(adjacent_tid_set)
-        return blocking_graph
-
-
-    def has_cycle(self, start, end, visited, blocking_graph):
-        """Use DFS to judge if there is a cycle in the blocking graph.
-        Principle:
-            For all the arcs that starts from a node, if this node's parent
-            existed as the end of an arc, then there is a cycle in the graph.
-        """
-        visited[start] = True
-        for adjacent_tid in blocking_graph[start]:
-            if adjacent_tid == end:
+        visited[src] = True
+        for node in graph[src]:
+            if node == dest:
                 return True
-            if not visited[adjacent_tid]:
-                if self.has_cycle(adjacent_tid, end, visited, blocking_graph):
+            if not visited[node]:
+                if self.is_cyclic(node, dest, visited, graph):
                     return True
         return False
 
-
-    def detect(self, transaction_table, blocking_graph):
+    def find_cycle(self, table: dict, graph: defaultdict):
         """
-        Find out if there is a cycle in the blocking graph. If so, then there exists
-        a deadlock, and this function will return the youngest transaction id. Otherwise,
-        return nothing.
+        Detect the cycle in the blocking graph and return the youngest transaction ID.
+
+        Args:
+            table (dict): Transaction table
+            graph (defaultdict): Blocking graph
+
+        Returns:
+            int: Youngest transaction ID
         """
-        victim_timestamp = float('-inf')
-        victim_tid = None
-        # To avoid `RuntimeError: dictionary changed size during iteration`,
-        # we should use list() function or .copy() method.
-        for tid in list(blocking_graph.keys()):
-            visited = defaultdict(bool)
-            if self.has_cycle(tid, tid, visited, blocking_graph):
-                if transaction_table[tid].ts > victim_timestamp:
-                    victim_timestamp = transaction_table[tid].ts
-                victim_tid = tid
-        return victim_tid
-
-
-    # def detect_cycle(self, src, dest, graph, visited):
-    #     visited.add(src)
+        t_ts = -1
+        t_id = None
         
-    #     for adj in graph[src]:
-    #         if adj == dest:
-    #             return True
-    #         if adj not in visited:
-    #             if self.detect_cycle(adj, dest, graph, visited):
-    #                 return True
-    #     return False    
-    
-    # def resolve_deadlock(self):
-    #     """
-    #     Detect deadlocks using cycle detection and abort the youngest
-    #     transaction in the cycle.
-    #     :return: True if a deadlock is resolved, False if no deadlock detected
-    #     """
-    #     blocking_graph = defaultdict(set)
-    #     for dm in self.dm_list:
-    #         if dm.is_running:
-    #             graph = dm.initialize_block_graph()
-    #             for node, adj_list in graph.items():
-    #                 blocking_graph[node].update(adj_list)
-    #     # print(dict(blocking_graph))
-    #     youngest_t_id = None
-    #     youngest_ts = -1
-    #     for node in list(blocking_graph.keys()):
-    #         visited = set()
-    #         if has_cycle(node, node, visited, blocking_graph):
-    #             if self.transaction_table[node].ts > youngest_ts:
-    #                 youngest_t_id = node
-    #                 youngest_ts = self.transaction_table[node].ts
-    #     if youngest_t_id:
-    #         print("Deadlock detected: aborting {}".format(youngest_t_id))
-    #         self.abort(youngest_t_id)
-    #         return True
-    #     return False
+        for k, v in list(graph.items()):
+            visited = defaultdict(bool)
+            if self.is_cyclic(k, k, visited, graph):
+                if table[k].ts > t_ts:
+                    ts = table[k].ts
+                t_id = k
+        return t_id
+
+    def check_deadlock(self):
+        """
+        Check if there is a deadlock by detecting a cycle in the blocking graph.
+
+        Returns:
+            bool: True if there is a deadlock, False otherwise
+        """
+        graph = self.init_graph(self.dm_list)
+        cyclic = self.find_cycle(self.transaction_table, graph)
+        if cyclic is None:
+            return False
+        else:
+            print("Deadlock detected. Abort transaction {}".format(cyclic))
+            self.abort(cyclic)
+            return True

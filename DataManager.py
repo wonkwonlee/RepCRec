@@ -1,5 +1,5 @@
 """
-Created on Friday, 2022-12-02
+Due on Saturday, 12/03/2022
 
 Author: Wonkwon Lee, Young Il Kim
 
@@ -8,9 +8,10 @@ from Config import *
 from LockManager import LockManager
 from collections import defaultdict
 
-class DataManager:
+class DataManager(object):
     """
     Initialize a data manager which manages all of the variables at a site.
+    Data manager is responsible for managing locks and data values during transactions.
     
     Args:
         site_id (int): Site ID
@@ -18,7 +19,7 @@ class DataManager:
     Returns:
         DataManager: A data manager object one for each site. Even variables are replicated at all sites and odd variables are not replicated.
     """
-    def __init__(self, site_id: int):
+    def __init__(self, site_id: str):
         self.site_id = site_id      # Site ID
         self.is_running = True      # Flag to indicate if the site is running
         self.data_table = {}        # Dictionary of variables stored at this site
@@ -81,7 +82,7 @@ class DataManager:
                 if lock.type == LockType.READ:
                     if t_id in lock.t_table:
                         return Output(True, var.val_list[0].val)
-                    if not lm.has_other_queued_write_lock():
+                    if not lm.check_wlock():
                         lm.share_lock(t_id)
                         return Output(True, var.val_list[0].val)
                     lm.add_queue(QLock(t_id, v_id, LockType.READ))
@@ -92,7 +93,10 @@ class DataManager:
                         return Output(True, var.tempVal)
                     lm.add_queue(QLock(t_id, v_id, LockType.READ))
                     return Output(False, None)
-            lm.set_lock(RLock(t_id, v_id))
+                else:
+                    print("Invalid lock type")
+                    return Output(False, None)
+            lm.lock = RLock(t_id, v_id)
             return Output(True, var.val_list[0].val)
         return Output(False, None)
         
@@ -118,7 +122,7 @@ class DataManager:
                     print("Write lock cannot be acquired. Need to wait.")
                     return
                 if t_id in lock.t_table:
-                    if lm.has_other_queued_write_lock(t_id):
+                    if lm.check_wlock(t_id):
                         print("Write lock cannot be acquired. Need to wait.")
                         return
                     lm.process_lock(WLock(t_id, v_id))
@@ -131,29 +135,29 @@ class DataManager:
                 return
             print("Write lock cannot be acquired. Need to wait.")
             return
-        lm.set_lock(WLock(t_id, v_id))
+        lm.lock = WLock(t_id, v_id)
         var.temp = Temp(val, t_id)
         return
-  
-    def contains(self, v_id: int):
-        """
-        Check if a variable is stored at this site.
-        """
-        return self.data_table.get(v_id)
 
     def fail(self, ts: int):
         """
-        Set site status to down and clear the lock table.
-        :param ts: record the failure time
+        Fail the site and release all locks.
+        
+        Args:
+            ts (int): Timestamp of the failure
         """
         self.is_running = False
         self.fail_ts.append(ts)
         for k, v in self.lock_table.items():
-            v.clear()
+            v.lock = None
+            v.lock_queue = []
 
     def recover(self, ts: int):
         """
         Recover the site and set the site status to up.
+        
+        Args:
+            ts (int): Timestamp of the recovery
         """
         self.is_running = True
         self.recover_ts.append(ts)
@@ -180,11 +184,11 @@ class DataManager:
             t_id (int): Transaction ID
         """
         for k, v in self.lock_table.items():
-            v.release_current_lock_by_transaction(t_id)
+            v.release_lock(t_id)
             for ql in list(v.lock_queue):
                 if ql.t_id == t_id:
                     v.lock_queue.remove(ql)
-        self.release_lock()                
+        self.release_all_lock()                
                            
     def commit(self, t_id: int, ts: int):
         """
@@ -195,7 +199,7 @@ class DataManager:
             ts (int): Timestamp of the commit
         """
         for k, v in self.lock_table.items():
-            v.release_current_lock_by_transaction(t_id)
+            v.release_lock(t_id)
             for ql in list(v.lock_queue):
                 # print("ql.t_id {}".format(ql.t_id))
                 # print("t_id {}".format(t_id))
@@ -203,11 +207,11 @@ class DataManager:
                     continue
         for k, v in self.data_table.items():
             if v.temp and v.temp.t_id == t_id:
-                v.update(Commit(v.temp.val, ts))
+                v.val_list.insert(0, Commit(v.temp.val, ts))
                 v.readable = True
                 # print("v.temp {}".format(v.temp.value))
                 # print("v's commits {}".format(v.commits[0].val))
-        self.release_lock()
+        self.release_all_lock()
     
     def acquire_wlock(self, t_id: int, v_id: int):
         """
@@ -228,7 +232,7 @@ class DataManager:
                     return False
                 # print("lock.t_table :: {}".format(lock.t_table))
                 if t_id in lock.t_table:
-                    if lm.has_other_queued_write_lock(t_id):
+                    if lm.check_wlock(t_id):
                         lm.add_queue(QLock(t_id, v_id, LockType.WRITE))
                         return False
                     return True
@@ -239,87 +243,85 @@ class DataManager:
             lm.add_queue(QLock(t_id, v_id,LockType.WRITE))
             return False
         return True
-    
-    
 
-###################################################################################################
-######################################## TODO #####################################################
-###################################################################################################
-    def initialize_block_graph(self):
+    def init_block_graph(self):
         """
-        Generate the blocking graph for this site
-        :return: blocking graph
+        Initialize the block graph for the site.
+
+        Returns:
+            graph (dict): Block graph for the site.
         """
-        def current_blocks_queued(lock, queued_lock):
-            """
-            Check if the current lock is blocking a queued lock.
-            :param lock: current lock
-            :param queued_lock: a queued Lock
-            :return: boolean value to indicate if current blocks queued
-            """
-            if lock.type == LockType.READ:
-                if queued_lock.type == LockType.READ or (len(lock.t_table) == 1 and queued_lock.t_id in lock.t_table):
-                    return False
-                return True
-            # current lock is W-lock
-            return not lock.t_id == queued_lock.t_id
-
-        def queued_blocks_queued(queued_lock_left, queued_lock_right):
-            """
-            Check if a queued lock is blocking another queued lock behind it.
-            :param queued_lock_left: a queued lock
-            :param queued_lock_right: another queued lock behind the first one
-            :return: boolean value to indicate if queued blocks queued
-            """
-            if queued_lock_left.type == LockType.READ and queued_lock_right.type == LockType.READ:
-                return False
-            # at least one lock is W-lock
-            return not queued_lock_left.t_id == queued_lock_right.t_id
-
         graph = defaultdict(set)
         for k, v in self.lock_table.items():
             if not v.lock or not v.lock_queue:
                 continue
-            # print("lock: {}".format(lm.lock))
-            # print("queue: {}".format(lm.lock_queue))
-            for ql in v.lock_queue:
-                if current_blocks_queued(v.lock, ql):
+            for l in v.lock_queue:
+                if self.check_qlock(v.lock, l):
                     if v.lock.type == LockType.READ:
                         for t_id in v.lock.t_table:
-                            if t_id != ql.t_id:
-                                graph[ql.t_id].add(t_id)
+                            if t_id != l.t_id:
+                                graph[l.t_id].add(t_id)
                     else:
-                        if v.lock.t_id != ql.t_id:
-                            graph[ql.t_id].add(
+                        if v.lock.t_id != l.t_id:
+                            graph[l.t_id].add(
                                 v.lock.t_id)
             for i in range(len(v.lock_queue)):
                 for j in range(i):
-                    if queued_blocks_queued(v.lock_queue[j], v.lock_queue[i]):
+                    if self.check_queue(v.lock_queue[j], v.lock_queue[i]):
                         graph[v.lock_queue[i].t_id].add(v.lock_queue[j].t_id)
         return graph
 
-    def release_lock(self):
+    def check_qlock(self, lock, qlock):
         """
-        Check the lock table and move queued locks ahead if necessary.
+        Check if the current lock is blocking the queued lock.
+
+        Args:
+            lock (LockManager): Current lock
+            qlock (QLock): Queued lock
+
+        Returns:
+            bool: True if the current lock is blocking the queued lock, False otherwise.
+        """
+        if lock.type == LockType.READ:
+            if qlock.type == LockType.READ or len(lock.t_table) == 1 and qlock.t_id in lock.t_table:
+                    return False
+            return True
+        return not lock.t_id == qlock.t_id
+
+    def check_queue(self, head, tail):
+        """
+        Check if the head queued lock is blocking the tail queued lock.
+
+        Args:
+            head (QLock): Head queued lock
+            tail (QLock): Tail queued lock
+
+        Returns:
+            bool: True if the head queued lock is blocking the tail queued lock, False otherwise.
+        """
+        
+        if head.type == LockType.READ and tail.type == LockType.READ:
+            return False
+        return not head.t_id == tail.t_id
+
+    def release_all_lock(self):
+        """
+        Release all locks on the site.
         """
         for k, v in self.lock_table.items():
             if v.lock_queue:
                 if not v.lock:
-                    # current lock is None
-                    # pop the first queued lock and add to
                     lock = v.lock_queue.pop(0)
-                    if lock.type == LockType.READ:
-                        v.set_lock(RLock(lock.t_id, lock.v_id))
+                    if lock.type == LockType.WRITE:
+                        v.lock = WLock(lock.t_id, lock.v_id)
                     else:
-                        v.set_lock(WLock(lock.t_id, lock.v_id))
+                        v.lock = RLock(lock.t_id, lock.v_id)
                 if v.lock.type == LockType.READ:
-                    # current lock is R-lock
-                    # share R-lock with leading R-queued-locks
-                    for ql in list(v.lock_queue):
-                        if ql.type == LockType.WRITE:
-                            if len(v.lock.t_table) == 1 and ql.t_id in v.lock.t_table:
-                                v.process_lock(WLock(ql.t_id, ql.v_id))
-                                v.lock_queue.remove(ql)
+                    for l in list(v.lock_queue):
+                        if l.type == LockType.WRITE:
+                            if len(v.lock.t_table) == 1 and l.t_id in v.lock.t_table:
+                                v.process_lock(WLock(l.t_id, l.v_id))
+                                v.lock_queue.remove(l)
                             break
-                        v.share_lock(ql.t_id)
-                        v.lock_queue.remove(ql)
+                        v.share_lock(l.t_id)
+                        v.lock_queue.remove(l)

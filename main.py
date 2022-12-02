@@ -1,8 +1,7 @@
 """
-Created on Friday, 2022-12-02
+Due on Saturday, 12/03/2022
 
-Author: Young Il Kim
-
+Author: Wonkwon Lee, Young Il Kim
 """
 
 import sys
@@ -14,8 +13,7 @@ if __name__ == '__main__':
     """
     Main function to run the program.
     Read the input file from the command line and process each operation.
-        : check number of inputs
-        : check if the file exists
+    Main checks number of inputs and check if the input file exists.
     """
     if len(sys.argv) != 2:
         print('INCORRECT INPUT')
@@ -26,13 +24,8 @@ if __name__ == '__main__':
     if fileName.mode == 'r':
         inputSource = fileName.readlines()
 
-    # print("FILE NAME IS :: {}".format(fileName))
-    # print()
-    # print("INPUT SOURCE IS :: {}".format(inputSource))
-    # print()
-
     tm = TransactionManager.TransactionManager()
-    if fileName :
+    if fileName:
         #print("INPUT :: {}".format(inputSource))
         try:
             #print("OPEN SUCCESSFULLY :: {}".format(inputSource))
@@ -45,30 +38,21 @@ if __name__ == '__main__':
                     continue
                 
                 newLine = line.split('//')[0].strip()
-                if len(newLine) == 0 :
+                if len(newLine) == 0:
                     continue
-                elif newLine.startswith('quit') :
+                elif newLine.startswith('quit'):
                     break
-                elif newLine.startswith('===') :
+                elif newLine.startswith('==='):
                     break
                 
                 temp = newLine.strip().strip(')')
                 temp = temp.split('(')
                 method = temp[0]
-                
-                # print("newLine :: " + newLine)
-                # print("temp :: {}".format(temp))
-                # print("method :: "+method)
-                
-                # args = {}
-                # if(len(args) > 0) :
-                    # args = temp[1].split(',')
-                # print("args :: {}".format(args))
 
                 ts += 1
                 
-                if tm.detect_deadlock():
-                     print("DEADLOCK DETECTED!")
+                if tm.check_deadlock():
+                    #  print("DEADLOCK DETECTED!")
                      tm.run_operation()
 
                 if method == "begin":
@@ -115,7 +99,7 @@ if __name__ == '__main__':
                     print(method)
                     tm.dump()
                     
-                else :
+                else:
                     print("Unrecognized command. Abort the program")
                     break
 
