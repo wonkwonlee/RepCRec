@@ -2,7 +2,6 @@
 Due on Saturday, 12/03/2022
 
 Author: Wonkwon Lee, Young Il Kim
-
 """
 from Config import *
 from LockManager import LockManager
