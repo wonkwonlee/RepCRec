@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
                 ts += 1
                 
-                if tm.detect_deadlock2():
+                if tm.detect_deadlock():
                      print("=========================== DEAD LOCK DETECHTED ===========================")
                      tm.run_operation()
 
