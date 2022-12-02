@@ -205,6 +205,7 @@ class TransactionManager(object):
         Arg:
             t_id (int): Transaction id
         """
+        self.ts += 1
         if not t_id in self.transaction_table:
             print("Transaction table does not contains {}".format(t_id),'\n')
             return
