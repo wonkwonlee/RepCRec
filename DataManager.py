@@ -75,10 +75,10 @@ class DataManager:
             if current_lock:
                 if current_lock.lock == LockType.READ:
                     if t_id in current_lock.transaction_id_set:
-                        return Output(True, var.val_list[-1].val)
+                        return Output(True, var.val_list[0].val)
                     if not lm.has_other_queued_write_lock():
                         lm.share_read_lock(t_id)
-                        return Output(True, var.val_list[-1].val)
+                        return Output(True, var.val_list[0].val)
                     lm.add_queue(WaitingLock(t_id, v_id, LockType.READ))
                     return Output(False, None)
                 
@@ -90,7 +90,7 @@ class DataManager:
             
 
             lm.set_current_lock(RLock(t_id, v_id))
-            return Output(True, var.val_list[-1].val)
+            return Output(True, var.val_list[0].val)
         return Output(False, None)
         
         
@@ -143,7 +143,7 @@ class DataManager:
         output = f"Site {self.site_id} - {status}"
 
         for k, v in self.data_table.items():
-            output += " {} : {}".format(k, v.val_list[-1].val)
+            output += " {} : {}".format(k, v.val_list[0].val)
         print(output)
         
     def fail(self, ts: int):
@@ -182,19 +182,12 @@ class DataManager:
             ts (int): Timestamp of the commit
         """
         for k, v in self.lock_table.items():
-            # release current lock held by this transaction
             v.release_current_lock_by_transaction(t_id)
-            # there shouldn't be any queued locks of tdata_maphis transaction
-            # print(lm.wait_lock)
-
             for ql in list(v.wait_lock):
                 # print("ql.t_id {}".format(ql.t_id))
                 # print("t_id {}".format(t_id))
                 if ql.t_id == t_id:
                     continue
-                    # print("hello")
-                    # raise RuntimeError("{} cannot commit with unresolved queued locks!".format(t_id))
-        # commit temp values
         #print("((((((((((((((((((((((((((((((((((((((((")
         for k, v in self.data_table.items():
             if v.temp_value and v.temp_value.t_id == t_id:

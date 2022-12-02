@@ -167,7 +167,7 @@ class Variable(object):
         self.val_list = [init_val]      # List of stored committed values
         self.readable = True            # Flag to indicate whether the variable is readable
         self.replicated = replicated    # Flag to indicate whether the variable is replicated 
-        # self.fail = False               # Flag to indicate whether the variable is failed
+        self.fail = False               # Flag to indicate whether the variable is failed
         self.temp_value = None          # Temporary value written by a transaction holding W-lock
 
     # def add_commit_value(self, commit_value):
@@ -178,4 +178,4 @@ class Variable(object):
     #     self.val_list.insert(0, commit_value)
         
     def update(self, val):
-        self.val_list.append(val)
+        self.val_list.insert(0, val)

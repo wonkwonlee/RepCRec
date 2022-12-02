@@ -115,7 +115,7 @@ class TransactionManager:
                 result = dm.read_snapshot(v_id, self.ts)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
-                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].val_list[-1].val, dm.site_id, self.ts),'\n')
+                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].val_list[0].val, dm.site_id, self.ts),'\n')
                     return True
         return False
             
@@ -138,7 +138,8 @@ class TransactionManager:
                 result = dm.read(t_id, v_id)
                 if result:
                     self.transaction_table[t_id].visited_sites.append(dm.site_id)
-                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].val_list[-1].val, dm.site_id, self.ts),'\n')
+                    print("Transaction {} reads variable {} of {} on site {} at time stamp {}".format(t_id, v_id, dm.data_table[v_id].val_list[0].val, dm.site_id, self.ts))
+                    print()
                     return True
         return False
         
@@ -179,7 +180,7 @@ class TransactionManager:
             # print(target_site.data_table[v_id])
             # print(target_site.data_table[v_id].val)
             self.transaction_table[t_id].visited_sites.append(target_sid)
-        print("Transaction {} writes variable {} with value {} to sites {}.".format(t_id, v_id, val, target_sites))
+        print("Transaction {} writes variable {} with value {} to sites {} at time stamp {}.".format(t_id, v_id, val, target_sites, self.ts))
         print()
         return True
         
