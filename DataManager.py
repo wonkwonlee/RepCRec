@@ -42,18 +42,38 @@ class DataManager:
         Returns:
             Output: An output object containing the result of the read_snapshot operation.
         """
-        var = self.data_table[v_id]
+        # var = self.data_table[v_id]
         
-        if not var.readable:
-            return Output(False)
-        else:
-            for cv in var.val_list:
-                if cv.ts <= ts:
+        # if not var.readable:
+        #     return Output(False)
+        # else:
+        #     for cv in var.val_list:
+        #         if cv.ts <= ts:
+        #             if var.replicated:
+        #                 for f in self.fail_ts:
+        #                     if cv.ts < f and f <= ts:
+        #                         return Output(False)
+        #             return Output(True, cv.val)
+                
+        #     def read_snapshot(self, v_id, ts:int):
+
+        var : Variable = self.data_table[v_id]
+        if var.readable :
+            # print("================ DM :: READ_SNAPSHOT :: Var.Readable :) ================")
+            for commit in var.val_list :
+                # print("commit :: {}".format(commit))
+                # print("ts :: {}".format(ts))
+                if commit.ts <= ts : 
+                    # print("commit <= ts")
                     if var.replicated:
-                        for f in self.fail_ts:
-                            if cv.ts < f and f <= ts:
+                        # print("var.replicated")
+                        for fail in self.fail_ts:
+                            # print("fail :: {}".format(fail))
+                            if commit.ts < fail and fail <= ts :
+                                # print("if commit < fail and fail <= ts")
                                 return Output(False)
-                    return Output(True, cv.val)
+                    return Output(True, commit.val)
+        return Output(False)
            
         
     def read(self, t_id: int, v_id: int):
