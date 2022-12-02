@@ -68,44 +68,37 @@ class LockManager(object):
                 if queued_lock.type == queue.type or queue.type == LockType.READ:
                     return
         self.lock_queue.append(queue)
-        
-        
-        
-###################################################################################################
-######################################## TODO #####################################################
-###################################################################################################
-    def has_other_queued_write_lock(self, t_id=None):
+
+    def check_wlock(self, t_id=None):
         """
-        Check if there's any other W-lock waiting in the queue.
-        :param transaction_id: if provided, W-lock in the queue that is from
-         this transaction will be ignored.
-        :return: boolean value to indicate if existing queued W-lock
+        Check if there is any write lock in the queue. 
+        If transaction ID is provided, write lock from the same transaction will be ignored.
+
+        Args:
+            t_id (int, optional): Transaction ID. Defaults to None.
+
+        Returns:
+            bool: True if there is a write lock in the queue, False otherwise.
         """
-        for queued_lock in self.lock_queue:
-            if queued_lock.type == LockType.WRITE:
-                if t_id and queued_lock.t_id == t_id:
+        for l in self.lock_queue:
+            if l.type == LockType.WRITE:
+                if t_id and l.t_id == t_id:
                     continue
                 return True
-        return False
 
-    def release_current_lock_by_transaction(self, t_id):
+    def release_lock(self, t_id: int):
         """
-        Release the current lock held by a transaction.
-        :param transaction_id: the id of the transaction
+        Release a lock from the lock queue. 
+
+        Args:
+            t_id (int): Transaction ID
         """
         if self.lock:
-            # print("=========================== LM :: RCLBT ===========================")
-            if self.lock.type == LockType.READ:
-                # print("if self.lock.type == LockType.READ:")
-                if t_id in self.lock.t_table:
-                    # print("if t_id in self.lock.t_table:")
-                    self.lock.t_table.remove(t_id)
-                    # print("self.lock.t_table.remove(t_id)")
-                # print(len(self.lock.t_table))
-                if not len(self.lock.t_table):
-                    # print("if not len(self.lock.t_table):")
-                    self.lock = None
-            else:
-                # print("if self.lock.type == LockType.WRITE:")
+            if self.lock.type == LockType.WRITE:
                 if self.lock.t_id == t_id:
+                    self.lock = None       
+            else:
+                if t_id in self.lock.t_table:
+                    self.lock.t_table.remove(t_id)
+                if not len(self.lock.t_table):
                     self.lock = None

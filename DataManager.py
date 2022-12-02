@@ -82,7 +82,7 @@ class DataManager(object):
                 if lock.type == LockType.READ:
                     if t_id in lock.t_table:
                         return Output(True, var.val_list[0].val)
-                    if not lm.has_other_queued_write_lock():
+                    if not lm.check_wlock():
                         lm.share_lock(t_id)
                         return Output(True, var.val_list[0].val)
                     lm.add_queue(QLock(t_id, v_id, LockType.READ))
@@ -122,7 +122,7 @@ class DataManager(object):
                     print("Write lock cannot be acquired. Need to wait.")
                     return
                 if t_id in lock.t_table:
-                    if lm.has_other_queued_write_lock(t_id):
+                    if lm.check_wlock(t_id):
                         print("Write lock cannot be acquired. Need to wait.")
                         return
                     lm.process_lock(WLock(t_id, v_id))
@@ -184,11 +184,11 @@ class DataManager(object):
             t_id (int): Transaction ID
         """
         for k, v in self.lock_table.items():
-            v.release_current_lock_by_transaction(t_id)
+            v.release_lock(t_id)
             for ql in list(v.lock_queue):
                 if ql.t_id == t_id:
                     v.lock_queue.remove(ql)
-        self.release_lock()                
+        self.release_all_lock()                
                            
     def commit(self, t_id: int, ts: int):
         """
@@ -199,7 +199,7 @@ class DataManager(object):
             ts (int): Timestamp of the commit
         """
         for k, v in self.lock_table.items():
-            v.release_current_lock_by_transaction(t_id)
+            v.release_lock(t_id)
             for ql in list(v.lock_queue):
                 # print("ql.t_id {}".format(ql.t_id))
                 # print("t_id {}".format(t_id))
@@ -211,7 +211,7 @@ class DataManager(object):
                 v.readable = True
                 # print("v.temp {}".format(v.temp.value))
                 # print("v's commits {}".format(v.commits[0].val))
-        self.release_lock()
+        self.release_all_lock()
     
     def acquire_wlock(self, t_id: int, v_id: int):
         """
@@ -232,7 +232,7 @@ class DataManager(object):
                     return False
                 # print("lock.t_table :: {}".format(lock.t_table))
                 if t_id in lock.t_table:
-                    if lm.has_other_queued_write_lock(t_id):
+                    if lm.check_wlock(t_id):
                         lm.add_queue(QLock(t_id, v_id, LockType.WRITE))
                         return False
                     return True
@@ -304,7 +304,7 @@ class DataManager(object):
             return False
         return not head.t_id == tail.t_id
 
-    def release_lock(self):
+    def release_all_lock(self):
         """
         Release all locks on the site.
         """
