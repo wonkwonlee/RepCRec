@@ -243,14 +243,13 @@ class DataManager(object):
             lm.add_queue(QLock(t_id, v_id,LockType.WRITE))
             return False
         return True
-    
+
     def init_block_graph(self):
         """
         Initialize the block graph for the site.
-        
 
         Returns:
-            graph (dict): Blocking graph
+            graph (dict): Block graph for the site.
         """
         graph = defaultdict(set)
         for k, v in self.lock_table.items():
@@ -259,53 +258,70 @@ class DataManager(object):
             for l in v.lock_queue:
                 if self.check_qlock(v.lock, l):
                     if v.lock.type == LockType.READ:
-                        for t in v.lock.t_table:
-                            if t != l.t_id:
-                                graph[l.t_id].add(l.t_id)
+                        for t_id in v.lock.t_table:
+                            if t_id != l.t_id:
+                                graph[l.t_id].add(t_id)
                     else:
                         if v.lock.t_id != l.t_id:
-                            graph[l.t_id].add(v.lock.t_id)
-                        
+                            graph[l.t_id].add(
+                                v.lock.t_id)
             for i in range(len(v.lock_queue)):
                 for j in range(i):
                     if self.check_queue(v.lock_queue[j], v.lock_queue[i]):
                         graph[v.lock_queue[i].t_id].add(v.lock_queue[j].t_id)
         return graph
-        
+
     def check_qlock(self, lock, qlock):
+        """
+        Check if the current lock is blocking the queued lock.
+
+        Args:
+            lock (LockManager): Current lock
+            qlock (QLock): Queued lock
+
+        Returns:
+            bool: True if the current lock is blocking the queued lock, False otherwise.
+        """
         if lock.type == LockType.READ:
-            if qlock.type == LockType.READ or len(lock.t_table) == 1:
-                if qlock.t_id in lock.t_table:
+            if qlock.type == LockType.READ or len(lock.t_table) == 1 and qlock.t_id in lock.t_table:
                     return False
             return True
         return not lock.t_id == qlock.t_id
 
     def check_queue(self, head, tail):
+        """
+        Check if the head queued lock is blocking the tail queued lock.
+
+        Args:
+            head (QLock): Head queued lock
+            tail (QLock): Tail queued lock
+
+        Returns:
+            bool: True if the head queued lock is blocking the tail queued lock, False otherwise.
+        """
+        
         if head.type == LockType.READ and tail.type == LockType.READ:
             return False
         return not head.t_id == tail.t_id
 
-
     def release_lock(self):
         """
-        Check the lock table and move queued locks ahead if necessary.
+        Release all locks on the site.
         """
         for k, v in self.lock_table.items():
             if v.lock_queue:
                 if not v.lock:
-                    # current lock is None
-                    # pop the first queued lock and add to
                     lock = v.lock_queue.pop(0)
-                    if lock.type == LockType.READ:
-                        v.lock = RLock(lock.t_id, lock.v_id)
-                    else:
+                    if lock.type == LockType.WRITE:
                         v.lock = WLock(lock.t_id, lock.v_id)
+                    else:
+                        v.lock = RLock(lock.t_id, lock.v_id)
                 if v.lock.type == LockType.READ:
-                    for ql in list(v.lock_queue):
-                        if ql.type == LockType.WRITE:
-                            if len(v.lock.t_table) == 1 and ql.t_id in v.lock.t_table:
-                                v.process_lock(WLock(ql.t_id, ql.v_id))
-                                v.lock_queue.remove(ql)
+                    for l in list(v.lock_queue):
+                        if l.type == LockType.WRITE:
+                            if len(v.lock.t_table) == 1 and l.t_id in v.lock.t_table:
+                                v.process_lock(WLock(l.t_id, l.v_id))
+                                v.lock_queue.remove(l)
                             break
-                        v.share_lock(ql.t_id)
-                        v.lock_queue.remove(ql)
+                        v.share_lock(l.t_id)
+                        v.lock_queue.remove(l)
