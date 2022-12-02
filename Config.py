@@ -44,6 +44,35 @@ class Operation(object):
         self.v_id = v_id            # Variable ID
         self.val = val              # Value to write (if write operation)
 
+class Variable(object):
+    """
+    Variable object that stores the variable id, list of committed values, and flags to indicate readable and replicated
+    
+    Args:
+        v_id (int): Variable ID
+        val (int): Initial value of the variable
+        replicated (bool): Flag to indicate whether the variable is replicated
+    """
+    def __init__(self, v_id: int, val: int, replicated: bool):
+        """
+        Constructor to initialize a variable object.
+        """
+        self.v_id = v_id                # Variable ID
+        self.val_list = [val]           # List of stored committed values
+        self.readable = True            # Flag to indicate whether the variable is readable
+        self.replicated = replicated    # Flag to indicate whether the variable is replicated 
+        self.fail = False               # Flag to indicate whether the variable is failed
+        self.temp = None          # Temporary value written by a transaction holding W-lock
+        
+    def update(self, val):
+        """
+        Update the variable with a new committed value.
+        
+        Args:
+            val (int): New committed value
+        """
+        self.val_list.insert(0, val)
+
 class LockType(Enum):
     """
     Enum for lock type.
@@ -189,31 +218,3 @@ class QLock(object):
         self.v_id = v_id
         self.type = lock_type 
         
-class Variable(object):
-    """
-    Variable object that stores the variable id, list of committed values, and flags to indicate readable and replicated
-    
-    Args:
-        v_id (int): Variable ID
-        val (int): Initial value of the variable
-        replicated (bool): Flag to indicate whether the variable is replicated
-    """
-    def __init__(self, v_id: int, val: int, replicated: bool):
-        """
-        Constructor to initialize a variable object.
-        """
-        self.v_id = v_id                # Variable ID
-        self.val_list = [val]           # List of stored committed values
-        self.readable = True            # Flag to indicate whether the variable is readable
-        self.replicated = replicated    # Flag to indicate whether the variable is replicated 
-        self.fail = False               # Flag to indicate whether the variable is failed
-        self.temp = None          # Temporary value written by a transaction holding W-lock
-        
-    def update(self, val):
-        """
-        Update the variable with a new committed value.
-        
-        Args:
-            val (int): New committed value
-        """
-        self.val_list.insert(0, val)

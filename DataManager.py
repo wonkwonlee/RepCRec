@@ -8,9 +8,10 @@ from Config import *
 from LockManager import LockManager
 from collections import defaultdict
 
-class DataManager:
+class DataManager(object):
     """
     Initialize a data manager which manages all of the variables at a site.
+    Data manager is responsible for managing locks and data values during transactions.
     
     Args:
         site_id (int): Site ID
@@ -92,7 +93,10 @@ class DataManager:
                         return Output(True, var.tempVal)
                     lm.add_queue(QLock(t_id, v_id, LockType.READ))
                     return Output(False, None)
-            lm.set_lock(RLock(t_id, v_id))
+                else:
+                    print("Invalid lock type")
+                    return Output(False, None)
+            lm.lock = RLock(t_id, v_id)
             return Output(True, var.val_list[0].val)
         return Output(False, None)
         
@@ -131,29 +135,29 @@ class DataManager:
                 return
             print("Write lock cannot be acquired. Need to wait.")
             return
-        lm.set_lock(WLock(t_id, v_id))
+        lm.lock = WLock(t_id, v_id)
         var.temp = Temp(val, t_id)
         return
-  
-    def contains(self, v_id: int):
-        """
-        Check if a variable is stored at this site.
-        """
-        return self.data_table.get(v_id)
 
     def fail(self, ts: int):
         """
-        Set site status to down and clear the lock table.
-        :param ts: record the failure time
+        Fail the site and release all locks.
+        
+        Args:
+            ts (int): Timestamp of the failure
         """
         self.is_running = False
         self.fail_ts.append(ts)
         for k, v in self.lock_table.items():
-            v.clear()
+            v.lock = None
+            v.lock_queue = []
 
     def recover(self, ts: int):
         """
         Recover the site and set the site status to up.
+        
+        Args:
+            ts (int): Timestamp of the recovery
         """
         self.is_running = True
         self.recover_ts.append(ts)
@@ -309,12 +313,10 @@ class DataManager:
                     # pop the first queued lock and add to
                     lock = v.lock_queue.pop(0)
                     if lock.type == LockType.READ:
-                        v.set_lock(RLock(lock.t_id, lock.v_id))
+                        v.lock = RLock(lock.t_id, lock.v_id)
                     else:
-                        v.set_lock(WLock(lock.t_id, lock.v_id))
+                        v.lock = WLock(lock.t_id, lock.v_id)
                 if v.lock.type == LockType.READ:
-                    # current lock is R-lock
-                    # share R-lock with leading R-queued-locks
                     for ql in list(v.lock_queue):
                         if ql.type == LockType.WRITE:
                             if len(v.lock.t_table) == 1 and ql.t_id in v.lock.t_table:

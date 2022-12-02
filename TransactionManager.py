@@ -10,7 +10,8 @@ from collections import defaultdict
 
 class TransactionManager(object):
     """
-    Initialize a transaction manager class. Each transaction manager has a list of data managers, transaction table, and operation list.
+    Transaction manager is responsible for managing transactions.
+    Each transaction manager has a list of data managers, transaction table, and operation list.
     Data manager list is initialized with 10 data managers.
     """
     transaction_table = {}  # Transaction table
@@ -18,7 +19,10 @@ class TransactionManager(object):
     ts = 0                  # Time stamp
     
     def __init__(self):
-        self.dm_list = []   # List of data managers
+        """
+        Initialize the transaction manager with 10 data managers.
+        """    
+        self.dm_list = []
         for dm in range(1, 11):
             self.dm_list.append(DataManager(dm))
     
@@ -168,8 +172,8 @@ class TransactionManager(object):
             print("Transaction {} aborts".format(t_id), '\n')
             return False
         
-        for dm in [site for site in self.dm_list if site.is_running and site.contains(v_id)]:   
-            # Check if site is running and variable is in the site
+        for dm in [site for site in self.dm_list if site.is_running and site.data_table.get(v_id)]:   
+            # Check if site is running and variable is in the data table
             wlock = dm.acquire_wlock(t_id, v_id)
             if not wlock:
                 print("Write lock conflict found. Transaction {} is waiting.".format(t_id), '\n')

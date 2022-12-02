@@ -12,35 +12,22 @@ class LockManager(object):
     A lock manager stores variable id, current lock, and a list of lock in queue.
     
     Args:
-        v_id (int): variable's id for a lock manager
+        v_id (int): Variable ID
     """
     def __init__(self, v_id: int):
         """
         Constructor for initializing a lock manager.
         """
-        self.v_id = v_id
-        self.lock = None
-        self.lock_queue = []
-
-    def clear(self):
-        """
-        Empty the current lock and the lock queue.
-        """
-        self.lock = None
-        self.lock_queue = []
-
-    def set_lock(self, lock):
-        """
-        Set the current lock.
-        """
-        self.lock = lock
+        self.v_id = v_id        # Variable ID
+        self.lock = None        # Current lock
+        self.lock_queue = []    # Lock queue
 
     def process_lock(self, wlock):
         """
         Process a write lock request based on the current lock and the lock queue.
 
         Args:
-            wlock (lock): write lock to be processed
+            wlock (lock): Write lock to be processed
         """
         if not self.lock:
             print("No lock exists")
@@ -54,14 +41,15 @@ class LockManager(object):
         elif wlock.t_id not in self.lock.t_table:
             print("The transaction holding the read lock is not the same as the transaction holding the write lock.")
             return 
-        self.set_lock(wlock)
+        self.lock = wlock
+        # self.set_lock(wlock)
 
     def share_lock(self, t_id: int):
         """
         Share the current lock with a transaction.
 
         Args:
-            t_id (int): Transaction id
+            t_id (int): Transaction ID
         """
         if not self.lock.type == LockType.READ:
             print("Current lock is not read lock.")
