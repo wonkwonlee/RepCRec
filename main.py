@@ -14,7 +14,7 @@ if __name__ == '__main__':
     """
     Main function to run the program.
     Read the input file from the command line and process each operation.
-    Main function checks number of inputs and check if the input file exists.
+    Main checks number of inputs and check if the input file exists.
     """
     if len(sys.argv) != 2:
         print('INCORRECT INPUT')
@@ -24,11 +24,6 @@ if __name__ == '__main__':
     fileName = open(sys.argv[1], 'r')
     if fileName.mode == 'r':
         inputSource = fileName.readlines()
-
-    # print("FILE NAME IS :: {}".format(fileName))
-    # print()
-    # print("INPUT SOURCE IS :: {}".format(inputSource))
-    # print()
 
     tm = TransactionManager.TransactionManager()
     if fileName:
@@ -54,15 +49,6 @@ if __name__ == '__main__':
                 temp = newLine.strip().strip(')')
                 temp = temp.split('(')
                 method = temp[0]
-                
-                # print("newLine :: " + newLine)
-                # print("temp :: {}".format(temp))
-                # print("method :: "+method)
-                
-                # args = {}
-                # if(len(args) > 0) :
-                    # args = temp[1].split(',')
-                # print("args :: {}".format(args))
 
                 ts += 1
                 
