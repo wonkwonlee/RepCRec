@@ -1,4 +1,5 @@
 # RepCRec
+## Replicated Concurrency Control and Recovery algorithm
 Final project for Advanced Database Systems, Fall 2022\
 Autors : Young Il Kim (yk2494), Wonkwon Lee (wl2733)
 
