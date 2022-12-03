@@ -274,7 +274,7 @@ class TransactionManager(object):
                 v.is_aborted = True
                 return
         
-    def init_graph(self, dm_list: list[DataManager]):
+    def init_graph(self, dm_list):
         """
         Initialize a blocking graph for deadlock detection.
 
