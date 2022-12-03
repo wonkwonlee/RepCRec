@@ -1,6 +1,7 @@
 # Replicated Concurrency Control and Recovery (RepCRec)
-Final project for Advanced Database Systems, Fall 2022\
-Autors : Young Il Kim (yk2494), Wonkwon Lee (wl2733)
+Final project for Advanced Database Systems, Fall 2022
+
+Young Il Kim (yk2494@nyu.edu), Wonkwon Lee (wl2733@nyu.edu)
 
 ## How to Run
 1. Make sure to have Python version 3.6+ installed.
@@ -16,7 +17,8 @@ A copy is indicated by a dot. The odd indexed variables are at one site each (i.
 Even indexed variables are at all sites. Each variable xi is initialized to the value 10i (10 times i). 
 Each site has an independent lock table. If that site fails, the lock table is erased.
 - Input: input instructions come from a standard input python main.py [input file]. The program will read the file line by line. 
-If the line starts with “//” or “===”, it will be ignored. If the input file is not given or doesn’t exist, then the program will show an error message. 
+If the line starts with “//” or “===”, it will be ignored. 
+If the input file is not given or doesn’t exist, then the program will show an error message. 
 Each line inside the file will have at most a single instruction from one transaction or a fail, recover, dump, end, etc.
 - Output: Output of each input file will be shown on the terminal. Execute each test case starting with the initial state of the database. 
 The output contains (i) the committed state of the data items at each dump, (ii) which value each read returns, (iii) which transactions commit and which abort. 
