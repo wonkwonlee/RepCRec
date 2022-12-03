@@ -1,5 +1,5 @@
 # RepCRec
-Replicated Concurrency Control and Recovery for Advanced Database Systems Project
+Replicated Concurrency Control and Recovery for Advanced Database Systems Project \n
 Autors : Young Il Kim (yk2494), Wonkwon Lee (wl2733)
 
 # How to Run
