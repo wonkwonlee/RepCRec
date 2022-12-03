@@ -1,5 +1,5 @@
 # Replicated Concurrency Control and Recovery (RepCRec)
-Final project for Advanced Database Systems, Fall 2022
+Final project for CSCI-GA-2434 Advanced Database Systems, Fall 2022
 
 Young Il Kim (yk2494@nyu.edu), Wonkwon Lee (wl2733@nyu.edu)
 
